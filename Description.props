@@ -2,53 +2,53 @@
 # 
 
 # Package name (required)
-PackageName=funkyPackage
+PackageName=HDA
 
 # Version (required)
-Version=x.y.z
+Version=0.0.1
 
 #Date (year-month-day)
-Date=2010-01-01
+Date=2015-01-30
 
 # Title (required)
-Title=My cool algorithm
+Title=Heteroscedastic Discriminant Analysis (HDA) for dimensionality reduction.
 
 # Category (recommended)
-Category=one or two word category - try to use categories already in use (some examples: Classification, Text classification, Ensemble learning, Regression, Clustering, Associations, Preprocessing, Visualization, Explorer, Experimenter, KnowledgeFlow, etc.)
+Category=Preprocesssing 
 
-# Author (required)
-Author=Joe Dev <joe@somewhere.net>,Dev2 <dev2@somewhereelse.net>,...
+Author (required)
+Author=Stephen Nusko <nuskos@uwindsor.ca>,Jeremy High <highj@uwindsor.ca>
 
 # Maintainer (required)
-Maintainer=Joe Dev <joe@somewhere.net>
+Maintainer=Stephen Nusko <nuskos@uwindsor.ca>,Jeremy High <highj@uwindsor.ca>
 
 # License (required)
-License=GPL 2.0|Mozilla
+License=GPL 3.0|Mozilla
 
 # Description (required)
-Description=A one paragraph description of the package.
+Description=Heteroscedastic Discriminant Analysis (HDA) is a machine learning algorithm for dimensionality reduction. Similar to Linear Discriminant Analysis (LDA) and Fisher Discriminant Analysis (FDA) HDA preforms statistical analysis of the correlation between instances, and projects it into lower space.
 
 # Package URL for obtaining the package archive (required)
-PackageURL=http://somewhere.net/weka/funkyPackage.zip?download
+PackageURL=https://github.com/StephenNu/HDA.git
 
 # URL for further information
-URL=http://somewhere.net/funkyResearchInfo.html
+URL=https://github.com/StephenNu/HDA.git
 
 # Enhances various other packages ?
-Enhances=packageName1,packageName2,...
+#Enhances=packageName1,packageName2,...
 
 # Related to other packages?
-Related=packageName1,packageName2,...
+#Related=packageName1,packageName2,...
 
 # Dependencies (format: packageName (equality/inequality version_number)
-Depends=weka (>=3.7.1),packageName1 (=x.y.z), packageName2 (>u.v.w|<=x.y.z),...
+Depends=weka (>=3.7.1)
 
 # Message to display in installation. Can be used to provide
 # special instructions (e.g. manual stuff needed to complete
 # the installation process). (optional).
 #MessageToDisplayOnInstallation=Funky package requires some extra\n\
- stuff to be installed after installing this package. You will\n\
- need to blah, blah, blah in order to blah, blah, blah...
+# stuff to be installed after installing this package. You will\n\
+# need to blah, blah, blah in order to blah, blah, blah...
 
 # Prevent package from being loaded by Weka if the named
 # files/directories are not present (relative to the package's
@@ -59,8 +59,8 @@ Depends=weka (>=3.7.1),packageName1 (=x.y.z), packageName2 (>u.v.w|<=x.y.z),...
 # Log message to be displayed if package can't be loaded due to
 # missing files/directories. (optional)
 #DoNotLoadIfFileNotPresentMessage=funkyPackage can't be loaded because some \
- funky libraries are missing. Please download funkyLibrary.jar from \
- http://www.funky.com and install in $WEKA_HOME/packages/funkyPackage/lib
+# funky libraries are missing. Please download funkyLibrary.jar from \
+# http://www.funky.com and install in $WEKA_HOME/packages/funkyPackage/lib
 
 # Prevent package from being loaded by Weka if the named
 # classes can't be instantiated. Useful for packages that rely
@@ -71,8 +71,8 @@ Depends=weka (>=3.7.1),packageName1 (=x.y.z), packageName2 (>u.v.w|<=x.y.z),...
 # Log message to be displayed if package can't be loaded due to 
 # missing classes. (optional).
 #DoNotLoadIfClassNotPresentMessage=funkyPackage can't be loaded because \
- com.funky.FunkyClass can't be instantiated. Have you downloaded and run \
- the funky software installer for your platform?
+# com.funky.FunkyClass can't be instantiated. Have you downloaded and run \
+# the funky software installer for your platform?
 
 # Prevent package from being loaded by Weka if one or more (comma-separated)
 # environment variables or java properties are not set. (optional).
