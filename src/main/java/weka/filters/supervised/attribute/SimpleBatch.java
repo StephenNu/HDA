@@ -31,7 +31,7 @@ public class SimpleBatch
       for (int n = 0; n < inst.numAttributes(); n++)
         values[n] = inst.instance(i).value(n);
       values[values.length - 1] = i;
-      result.add(new Instance(1, values));
+      result.add(new DenseInstance(1, values));
     }
     return result;
   }
