@@ -1,3 +1,5 @@
+package weka.filters;
+
 import weka.core.*;
 import weka.core.Capabilities.*;
 import weka.filters.*;
