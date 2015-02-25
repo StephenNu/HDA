@@ -13,7 +13,7 @@
   <property name="src" value="src/main/java"/>
   <property name="src-test" value="src/test/java"/>
   <property name="lib" value="lib" />
-  <property name="build" value="java-build"/>
+  <property name="build" value="build"/>
   <property name="dist"  value="dist"/>
   <property name="doc"  value="doc"/>
   <property name="javac_max_memory" value="256m"/>
