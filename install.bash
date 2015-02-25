@@ -1,5 +1,6 @@
 #!/bin/bash
-
+# remember to install weka to the classpath. In arch this can be done by.
+# export CLASSPATH=/usr/share/java/weka/weka.jar:$CLASSPATH
 function createJAR() {
   ant -f build_package.xml
   mkdir weka
@@ -12,7 +13,6 @@ function createJAR() {
 }
 
 function setup() {
-  export CLASSPATH=/usr/share/java/weka/weka.jar:$CLASSPATH
   createJAR
   zip HDA.zip ./src/main/java/weka/filters/supervised/attribute/* ./HDA.jar ./build_package.xml ./Description.props
 }
