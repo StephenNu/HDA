@@ -98,6 +98,44 @@ public class HDA
     return medians;
   }
 
+  /**
+   * @param datasets    A list of instances representing each dataset
+   *                    seperated by classes.
+   * @return            Returns a list of covariance matricies each one
+   *                    related to the dataset seperated by class.
+   */
+  protected ArrayList<Matrix> findCovarianceMatrices(ArrayList<Instances> datasets) {
+    ArrayList<Matrix> covarianceMatrices = new ArrayList<Matrix>();
+    ArrayList<Matrix> sampleMeans = findSampleMeans(datasets);
+    for (int i = 0; i < datasets.size(); ++i) {
+      if (datasets.get(i).numInstances() > 0) {
+        double[][] val = new double[datasets.get(i).instance(0).numAttributes()][datasets.get(i).instance(0).numAttributes()];
+        Matrix covariance_i = new Matrix(val);
+        for (int k = 0; k < datasets.get(i).numInstances(); ++k) {
+          Instance current_instance = datasets.get(i).instance(k);
+          double[] values = new double[current_instance.numAttributes()];
+          int l = 0;
+          for (int j = 0; j < current_instance.numAttributes(); ++j) {
+            if (current_instance.classIndex() != j) {
+              values[l] += current_instance.value(j);
+              ++l;
+            }
+          }
+          Matrix single_example = new Matrix(values, values.length);
+          single_example.minusEquals(sampleMeans.get(i));
+          single_example = single_example.times(single_example.transpose());
+          System.out.println(single_example);
+          covariance_i.plusEquals(single_example);
+        }
+        covariance_i.timesEquals(1.0/(double)datasets.get(i).size());
+        covarianceMatrices.add(covariance_i);
+      } else {
+        System.out.println("No instances found for class value of " + i);
+      } 
+    }
+    return covarianceMatrices;
+  }
+
   protected Instances process(Instances inst) {
 
     // double_matrix will be used to construct a matrix of the dataset.
@@ -106,6 +144,7 @@ public class HDA
     ArrayList<Instances> disjointDataset 
             = seperateDatasetByClass(inst);
     ArrayList<Matrix> sampleMeans = findSampleMeans(disjointDataset);
+    ArrayList<Matrix> covarianceMatrices = findCovarianceMatrices(disjointDataset);
     // Instances is just a ArrayList<Instance> 
     Instances result = new Instances(determineOutputFormat(inst), 0);
 
