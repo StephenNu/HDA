@@ -124,7 +124,6 @@ public class HDA
           Matrix single_example = new Matrix(values, values.length);
           single_example.minusEquals(sampleMeans.get(i));
           single_example = single_example.times(single_example.transpose());
-          System.out.println(single_example);
           covariance_i.plusEquals(single_example);
         }
         covariance_i.timesEquals(1.0/(double)datasets.get(i).size());
@@ -194,6 +193,10 @@ public class HDA
     for (int i = 0; i < sampleMeans.size(); ++i) {
       System.out.println("We found that sample mean " + i + " was\n");
       System.out.println(sampleMeans.get(i));
+    }
+    for (int i = 0; i < covarianceMatrices.size(); ++i) {
+      System.out.println("We found that covariance matrix " + i + " was\n");
+      System.out.println(covarianceMatrices.get(i));
     }
     return result;
   }
