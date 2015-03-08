@@ -37,38 +37,65 @@ public class HDA
   
   /**
    * @param inst  a list of Instances , which will be seperated based on class.
-   * @return      Returns a three layer ArrayList of type Double,
-   *              the first level is each dataset seperated by class,
-   *              second level is each Instance in the dataset,
-   *              And the final level is the value of the attributes.
+   * @return      Returns the passed in instances seperated by class values.
    */
-  protected ArrayList<ArrayList<ArrayList<Double>>> 
-    seperateDatasetByClass(Instances inst) {
-    ArrayList<ArrayList<ArrayList<Double>>> disjointDataset 
-      = new ArrayList<ArrayList<ArrayList<Double>>>(inst.numClasses());
-    
+  protected ArrayList<Instances> seperateDatasetByClass(Instances inst) {
+    int numAtt = inst.numAttributes() - 1;
+    ArrayList<Instances> disjointDataset 
+            = new ArrayList<Instances>(inst.numClasses());
+
     for (int i = 0; i < inst.numClasses(); ++i) {
-      disjointDataset.add(new ArrayList<ArrayList<Double>>());
+      disjointDataset.add(new Instances(inst, 0));
     }
     /*
-     * We find the class of each instance, add a new "Instance" ie arraylist to 
+     * We find the class of each instance, add a new "Instance" to
      * that disjoint dataset, and then add each value of the attribute to it.
      */
     for (int i = 0; i < inst.numInstances(); i++) {
       final int class_value = (int)inst.instance(i).classValue();
-
-      disjointDataset.get(class_value).add(
-              new ArrayList<Double>(inst.numAttributes()));
-
+      double[] values = new double[numAtt];
       for (int n = 0; n < inst.numAttributes(); n++) {
-        int pos = disjointDataset.get(class_value).size();
-        if (n != inst.classIndex()) {
-          disjointDataset.get(class_value).get(pos-1).add(
-                  inst.instance(i).value(n));
+        if (n != inst.instance(i).classIndex()) {
+          values[n] = inst.instance(i).value(n);
         }
       }
+      // Adds the instance, which is just an array for weka.
+      disjointDataset.get(class_value).add(new DenseInstance(1, values));
     }
     return disjointDataset;
+  }
+
+  /**
+   * @param datasets    A list of instances representing each dataset 
+   *                    seperated by classes.
+   * @return            Returns a list of single column matricies, i.e. a vector
+   *                    each representing a mean of all sample data seperated by
+   *                    classes.
+   */
+  protected ArrayList<Matrix> findSampleMeans(ArrayList<Instances> datasets) {
+    ArrayList<Matrix> medians = new ArrayList<Matrix>();
+    for (int i = 0; i < datasets.size(); ++i) {
+      if (datasets.get(i).numInstances() > 0) {
+        double[] values = new double[datasets.get(i).instance(0).numAttributes()];
+        for (int k = 0; k < datasets.get(i).numInstances(); ++k) {
+          Instance current_instance = datasets.get(i).instance(k);
+          int l = 0;
+          for (int j = 0; j < current_instance.numAttributes(); ++j) {
+            if (current_instance.classIndex() != j) {
+              values[l] += current_instance.value(j);
+              ++l;
+            }
+          }
+        }
+        // We construct a vector and divide it by the size of the datasets.
+        Matrix median_i = new Matrix(values, values.length);
+        median_i.timesEquals(1.0/(double)datasets.get(i).size());
+        medians.add(median_i);
+      } else {
+        System.out.println("No instances found for class value of " + i);
+      }
+    }
+    return medians;
   }
 
   protected Instances process(Instances inst) {
@@ -76,8 +103,9 @@ public class HDA
     // double_matrix will be used to construct a matrix of the dataset.
     double double_matrix[][] = new double[inst.size()][inst.numAttributes()];
     // Construct all D_{i}
-    ArrayList<ArrayList<ArrayList<Double>>> disjointDataset 
+    ArrayList<Instances> disjointDataset 
             = seperateDatasetByClass(inst);
+    ArrayList<Matrix> sampleMeans = findSampleMeans(disjointDataset);
     // Instances is just a ArrayList<Instance> 
     Instances result = new Instances(determineOutputFormat(inst), 0);
 
@@ -116,18 +144,22 @@ public class HDA
       System.out.println("We have constructed the following disjointDataset");
       for (int i = 0; i < disjointDataset.size(); ++i) {
           System.out.println("\ndisjointDataset number " + i + " is \n");
-        for (int j = 0; j < disjointDataset.get(i).size(); ++j) {
-          for (int k = 0; k < disjointDataset.get(i).get(j).size(); ++k) {
-            System.out.print(" " + disjointDataset.get(i).get(j).get(k));
+          for (int j = 0; j < disjointDataset.get(i).size(); ++j) {
+            for (int k = 0; k < disjointDataset.get(i).instance(j).numAttributes(); ++k) {
+              System.out.print(" " + disjointDataset.get(i).instance(j).value(k));
+            }
+            System.out.println("");
           }
-          System.out.println("");
-        }
       }
+    }
+    for (int i = 0; i < sampleMeans.size(); ++i) {
+      System.out.println("We found that sample mean " + i + " was\n");
+      System.out.println(sampleMeans.get(i));
     }
     return result;
   }
 
-  public static void main(String[] args) {
-    runFilter(new HDA(), args);
+    public static void main(String[] args) {
+      runFilter(new HDA(), args);
+    }
   }
-}
