@@ -135,6 +135,25 @@ public class HDA
     return covarianceMatrices;
   }
 
+  /**
+   * @param datasets    A list of instances representing each dataset
+   *                    separated by clases.
+   * @return            Returns a list of probabilities of each class
+   *                    occuring in the provided dataset.
+   */
+  protected ArrayList<Double> calculateProbability(ArrayList<Instances> datasets) {
+    ArrayList<Double> probabilities = new ArrayList<Double>();
+    double sum = 0.0;
+    for (Instances inst : datasets) {
+      sum += inst.numInstances();
+    }
+
+    for (Instances inst : datasets) {
+      probabilities.add(new Double(((double)inst.numInstances())/sum));
+    }
+    return probabilities;
+  }
+
   protected Instances process(Instances inst) {
 
     // double_matrix will be used to construct a matrix of the dataset.
@@ -144,6 +163,7 @@ public class HDA
             = seperateDatasetByClass(inst);
     ArrayList<Matrix> sampleMeans = findSampleMeans(disjointDataset);
     ArrayList<Matrix> covarianceMatrices = findCovarianceMatrices(disjointDataset);
+    ArrayList<Double> probabilities = calculateProbability(disjointDataset);
     // Instances is just a ArrayList<Instance> 
     Instances result = new Instances(determineOutputFormat(inst), 0);
 
@@ -197,6 +217,10 @@ public class HDA
     for (int i = 0; i < covarianceMatrices.size(); ++i) {
       System.out.println("We found that covariance matrix " + i + " was\n");
       System.out.println(covarianceMatrices.get(i));
+    }
+    for (int i = 0; i < probabilities.size(); ++i) {
+      System.out.println("We found probability fo class " + i + " was\n");
+      System.out.println(probabilities.get(i));
     }
     return result;
   }
