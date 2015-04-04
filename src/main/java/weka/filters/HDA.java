@@ -219,7 +219,7 @@ public class HDA
       System.out.println(covarianceMatrices.get(i));
     }
     for (int i = 0; i < probabilities.size(); ++i) {
-      System.out.println("We found probability fo class " + i + " was\n");
+      System.out.println("We found probability for class " + i + " was\n");
       System.out.println(probabilities.get(i));
     }
     return result;
