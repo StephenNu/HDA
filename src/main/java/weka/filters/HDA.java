@@ -154,6 +154,27 @@ public class HDA
     return probabilities;
   }
 
+  /**
+   * @param sampleMeans A list of vectors that represent the ith mean
+   *                    for each of the i classes.
+   *
+   * @return            Returns a list of list of matricies, where the
+   *                    matrix at [i,j] is the Scatter matrix formed by
+   *                    (meani - meanj)*transpose(meani - meanj)
+   *
+   */
+  protected ArrayList<ArrayList<Matrix>> betweenClassScatterMatricies(ArrayList<Matrix> sampleMeans) {
+    ArrayList<ArrayList<Matrix>> ScatterMatricies = new ArrayList<ArrayList<Matrix>>();
+    for (int i = 0; i < sampleMeans.size(); ++i) {
+      ScatterMatricies.add(new ArrayList<Matrix>());
+      for (int j = 0; j < sampleMeans.size(); ++j) {
+        Matrix scatter = sampleMeans.get(i).minus(sampleMeans.get(j));
+        ScatterMatricies.get(i).add(scatter.times(scatter.transpose()));
+      }
+    }
+    return ScatterMatricies;
+  }
+
   protected Instances process(Instances inst) {
 
     // double_matrix will be used to construct a matrix of the dataset.
@@ -164,6 +185,7 @@ public class HDA
     ArrayList<Matrix> sampleMeans = findSampleMeans(disjointDataset);
     ArrayList<Matrix> covarianceMatrices = findCovarianceMatrices(disjointDataset);
     ArrayList<Double> probabilities = calculateProbability(disjointDataset);
+    ArrayList<ArrayList<Matrix>> scatterMatricies = betweenClassScatterMatricies(sampleMeans);
     // Instances is just a ArrayList<Instance> 
     Instances result = new Instances(determineOutputFormat(inst), 0);
 
@@ -209,18 +231,24 @@ public class HDA
             System.out.println("");
           }
       }
-    }
-    for (int i = 0; i < sampleMeans.size(); ++i) {
-      System.out.println("We found that sample mean " + i + " was\n");
-      System.out.println(sampleMeans.get(i));
-    }
-    for (int i = 0; i < covarianceMatrices.size(); ++i) {
-      System.out.println("We found that covariance matrix " + i + " was\n");
-      System.out.println(covarianceMatrices.get(i));
-    }
-    for (int i = 0; i < probabilities.size(); ++i) {
-      System.out.println("We found probability for class " + i + " was\n");
-      System.out.println(probabilities.get(i));
+      for (int i = 0; i < sampleMeans.size(); ++i) {
+        System.out.println("We found that sample mean " + i + " was\n");
+        System.out.println(sampleMeans.get(i));
+      }
+      for (int i = 0; i < covarianceMatrices.size(); ++i) {
+        System.out.println("We found that covariance matrix " + i + " was\n");
+        System.out.println(covarianceMatrices.get(i));
+      }
+      for (int i = 0; i < probabilities.size(); ++i) {
+        System.out.println("We found probability for class " + i + " was\n");
+        System.out.println(probabilities.get(i));
+      }
+      for (int i = 0; i < scatterMatricies.size(); ++i) {
+        for (int j = 0; j < scatterMatricies.get(i).size(); ++j) {
+          System.out.println("We found that scattermatrix [" + i + ", " + j + "] was");
+          System.out.println(scatterMatricies.get(i).get(j));
+        }
+      }
     }
     return result;
   }
