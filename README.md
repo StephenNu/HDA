@@ -9,6 +9,10 @@ Ensure you have the following programs and tools installed on your computer befo
 
 The next step is to ensure that weka.jar is in the $CLASSPATH variable.
 On Arch Linux if weka was installed from the AUR, the jar is found in /usr/share/java/weka/weka.jar.
+To add it to the CLASSPATH on Arch add this line to your ~/.bashrc
+```
+export CLASSPATH=/usr/share/java/weka/weka.jar:$CLASSPATH
+```
 
 Next step is clone the repo,
 ```
