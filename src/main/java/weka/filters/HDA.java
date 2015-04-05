@@ -17,15 +17,16 @@ public class HDA
   private final boolean DEBUG = true;
 
   public String globalInfo() {
-    return   "A simple batch filter that adds an additional attribute 'bla' at the end "
-      + "containing the index of the processed instance.";
+    return   "A simple batch filter that adds an additional attribute "
+     +"'bla' at the end containing the index of the processed instance.";
   }
 
   public Capabilities getCapabilities() {
     Capabilities result = super.getCapabilities();
     result.enableAllAttributes();
-    result.enableAllClasses();
-    result.enable(Capability.NO_CLASS);  //// filter doesn't need class to be set//
+    result.enableAllClasses(); 
+    //// filter doesn't need class to be set//
+    result.enable(Capability.NO_CLASS);
     return result;
   }
 
@@ -72,11 +73,13 @@ public class HDA
    *                    each representing a mean of all sample data seperated by
    *                    classes.
    */
-  protected ArrayList<Matrix> findSampleMeans(ArrayList<Instances> datasets) {
+  protected ArrayList<Matrix> findSampleMeans(
+          ArrayList<Instances> datasets) {
     ArrayList<Matrix> medians = new ArrayList<Matrix>();
     for (int i = 0; i < datasets.size(); ++i) {
       if (datasets.get(i).numInstances() > 0) {
-        double[] values = new double[datasets.get(i).instance(0).numAttributes()];
+        double[] values 
+                = new double[datasets.get(i).instance(0).numAttributes()];
         for (int k = 0; k < datasets.get(i).numInstances(); ++k) {
           Instance current_instance = datasets.get(i).instance(k);
           int l = 0;
@@ -104,12 +107,15 @@ public class HDA
    * @return            Returns a list of covariance matricies each one
    *                    related to the dataset seperated by class.
    */
-  protected ArrayList<Matrix> findCovarianceMatrices(ArrayList<Instances> datasets) {
+  protected ArrayList<Matrix> findCovarianceMatrices(
+          ArrayList<Instances> datasets) {
     ArrayList<Matrix> covarianceMatrices = new ArrayList<Matrix>();
     ArrayList<Matrix> sampleMeans = findSampleMeans(datasets);
     for (int i = 0; i < datasets.size(); ++i) {
       if (datasets.get(i).numInstances() > 0) {
-        double[][] val = new double[datasets.get(i).instance(0).numAttributes()][datasets.get(i).instance(0).numAttributes()];
+        double[][] val
+                 = new double[datasets.get(i).instance(0).numAttributes()]
+                             [datasets.get(i).instance(0).numAttributes()];
         Matrix covariance_i = new Matrix(val);
         for (int k = 0; k < datasets.get(i).numInstances(); ++k) {
           Instance current_instance = datasets.get(i).instance(k);
@@ -141,7 +147,8 @@ public class HDA
    * @return            Returns a list of probabilities of each class
    *                    occuring in the provided dataset.
    */
-  protected ArrayList<Double> calculateProbability(ArrayList<Instances> datasets) {
+  protected ArrayList<Double> calculateProbability(
+          ArrayList<Instances> datasets) {
     ArrayList<Double> probabilities = new ArrayList<Double>();
     double sum = 0.0;
     for (Instances inst : datasets) {
@@ -154,6 +161,53 @@ public class HDA
     return probabilities;
   }
 
+  /**
+   * @param probabilities A list of probabilties for a given example to
+   *                      belong to a specified class.
+   *
+   * @return              Returns a list of lists of probabilities, where
+   *                      The value at [i,j] is the probability that given
+   *                      an example, it will belong to class i when only
+   *                      considering examples belonging to either class i or j
+   */
+  protected ArrayList<ArrayList<Double>> calculateRelativeProbability(
+          ArrayList<Double> probabilities) {
+    ArrayList<ArrayList<Double>> relativeProbabilities 
+            = new ArrayList<ArrayList<Double>>();
+    for (int i = 0; i < probabilities.size(); ++i) {
+      relativeProbabilities.add(new ArrayList<Double>());
+      for (int j = 0; j < probabilities.size(); ++j) {
+        double prob_i = probabilities.get(i).doubleValue();
+        double sampleSize = prob_i + probabilities.get(j).doubleValue();
+        relativeProbabilities.get(i).add(new Double(prob_i/sampleSize));
+      }
+    }
+    return relativeProbabilities;
+  }
+
+  /**
+   * @param sampleMeans A list of vectors that represent the ith mean
+   *                    for each of the i classes.
+   *
+   * @return            Returns a list of list of matricies, where the
+   *                    matrix at [i,j] is the Scatter matrix formed by
+   *                    (meani - meanj)*transpose(meani - meanj)
+   *
+   */
+  protected ArrayList<ArrayList<Matrix>> betweenClassScatterMatricies(
+      ArrayList<Matrix> sampleMeans) {
+    ArrayList<ArrayList<Matrix>> ScatterMatricies 
+            = new ArrayList<ArrayList<Matrix>>();
+    for (int i = 0; i < sampleMeans.size(); ++i) {
+      ScatterMatricies.add(new ArrayList<Matrix>());
+      for (int j = 0; j < sampleMeans.size(); ++j) {
+        Matrix scatter = sampleMeans.get(i).minus(sampleMeans.get(j));
+        ScatterMatricies.get(i).add(scatter.times(scatter.transpose()));
+      }
+    }
+    return ScatterMatricies;
+  }
+
   protected Instances process(Instances inst) {
 
     // double_matrix will be used to construct a matrix of the dataset.
@@ -162,8 +216,13 @@ public class HDA
     ArrayList<Instances> disjointDataset 
             = seperateDatasetByClass(inst);
     ArrayList<Matrix> sampleMeans = findSampleMeans(disjointDataset);
-    ArrayList<Matrix> covarianceMatrices = findCovarianceMatrices(disjointDataset);
+    ArrayList<Matrix> covarianceMatrices 
+            = findCovarianceMatrices(disjointDataset);
     ArrayList<Double> probabilities = calculateProbability(disjointDataset);
+    ArrayList<ArrayList<Matrix>> scatterMatricies 
+            = betweenClassScatterMatricies(sampleMeans);
+    ArrayList<ArrayList<Double>> relativeProbabilities 
+            = calculateRelativeProbability(probabilities);
     // Instances is just a ArrayList<Instance> 
     Instances result = new Instances(determineOutputFormat(inst), 0);
 
@@ -193,34 +252,50 @@ public class HDA
       result.add(new DenseInstance(1, values));
     }
 
-    // Matrix with each row being a data point, last column is the class it belongs to.
+    // Matrix with each row being a data point, 
+    // last column is the class it belongs to.
     Matrix matrix = new Matrix(double_matrix);
 
     if (DEBUG) {
       System.out.println("Matrix was constructed as:");
-      System.out.println("first columns are attributes values, and second last column is class number, last column is Attribute bla:\n" + matrix);
+      System.out.println("first columns are attributes values, and second last"
+          +" column is class number, last column is Attribute bla:\n" + matrix);
       System.out.println("We have constructed the following disjointDataset");
       for (int i = 0; i < disjointDataset.size(); ++i) {
           System.out.println("\ndisjointDataset number " + i + " is \n");
           for (int j = 0; j < disjointDataset.get(i).size(); ++j) {
-            for (int k = 0; k < disjointDataset.get(i).instance(j).numAttributes(); ++k) {
-              System.out.print(" " + disjointDataset.get(i).instance(j).value(k));
+            for (int k = 0; 
+                k < disjointDataset.get(i).instance(j).numAttributes(); 
+                ++k) {
+              System.out.print(""+ disjointDataset.get(i).instance(j).value(k));
             }
             System.out.println("");
           }
       }
-    }
-    for (int i = 0; i < sampleMeans.size(); ++i) {
-      System.out.println("We found that sample mean " + i + " was\n");
-      System.out.println(sampleMeans.get(i));
-    }
-    for (int i = 0; i < covarianceMatrices.size(); ++i) {
-      System.out.println("We found that covariance matrix " + i + " was\n");
-      System.out.println(covarianceMatrices.get(i));
-    }
-    for (int i = 0; i < probabilities.size(); ++i) {
-      System.out.println("We found probability for class " + i + " was\n");
-      System.out.println(probabilities.get(i));
+      for (int i = 0; i < sampleMeans.size(); ++i) {
+        System.out.println("We found that sample mean " + i + " was\n");
+        System.out.println(sampleMeans.get(i));
+      }
+      for (int i = 0; i < covarianceMatrices.size(); ++i) {
+        System.out.println("We found that covariance matrix " + i + " was\n");
+        System.out.println(covarianceMatrices.get(i));
+      }
+      for (int i = 0; i < probabilities.size(); ++i) {
+        System.out.println("We found probability for class " + i + " was\n");
+        System.out.println(probabilities.get(i));
+      }
+      for (int i = 0; i < scatterMatricies.size(); ++i) {
+        for (int j = 0; j < scatterMatricies.get(i).size(); ++j) {
+          System.out.println("We found scattermatrix [" + i + ", " + j + "]");
+          System.out.println(scatterMatricies.get(i).get(j));
+        }
+      }
+      for (int i = 0; i < relativeProbabilities.size(); ++i) {
+        for (int j = 0; j < relativeProbabilities.get(i).size(); ++j) {
+          System.out.println("We found relative-prob [" + i + ", " + j + "]");
+          System.out.println(relativeProbabilities.get(i).get(j));
+        }
+      }
     }
     return result;
   }
