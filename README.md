@@ -19,9 +19,10 @@ Next step is clone the repo,
 git clone https://github.com/StephenNu/HDA.git
 ```
 
-After that is it as simple as
+After that move into the location of the repo and make the package by the following commands
 ```
-./install.bash make\_package
+cd HDA
+./install.bash make_package
 ```
 
 Now in weka open the package manager and click "File/URL" under the unoffical section.
