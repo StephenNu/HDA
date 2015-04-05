@@ -208,6 +208,15 @@ public class HDA
     return ScatterMatricies;
   }
 
+  /**
+   * @param covarianceMatrices  A list of covariance matricies for each class
+   *                            , to be combined with the probabilities to form
+   *                             the Within Class Scatter Matrix.
+   * @param probabilities       A list of probabilities for each class i.
+   *
+   * @return                    Returns all the sum of all covariance matricies
+   *                            times their respective probability.
+   */
   protected Matrix withinClassScatterMatrix(
           ArrayList<Matrix> covarianceMatrices,
           ArrayList<Double> probabilities) {
@@ -225,6 +234,34 @@ public class HDA
       }
       return withinClassScatter;
     }
+  }
+
+  /**
+   * @param A                   A matrix that will be raised to 1/2 or -1/2
+   * @param positivePower       If true the matrix will be raised to 1/2
+   *                            Otherwise the matrix will be raised to -1/2
+   *
+   * @return                    Returns the matrix A^(1/2) if positivePower is
+   *                            true, and A^(-1/2) otherwise.
+   */
+  protected Matrix matrixToOneHalf(Matrix A, boolean positivePower) {
+    EigenvalueDecomposition values = new EigenvalueDecomposition(A);
+    Matrix M = values.getD();
+    for (int i = 0; i < M.getColumnDimension() && i < M.getRowDimension(); ++i) {
+      M.getArray()[i][i]
+          = (positivePower) ?
+              Math.sqrt(M.getArray()[i][i]) : 1.0/Math.sqrt(M.getArray()[i][i]);
+    }
+    if (DEBUG) {
+      System.out.println("We have a positivepower is " + positivePower);
+      System.out.println("Working with eigenvectors \n" + values.getV());
+      System.out.println("and eignvalues \n" + values.getD());
+      System.out.println("and changed values\n" + M);
+    }
+    Matrix AOneHalf = values.getV().copy();
+    AOneHalf = AOneHalf.times(M);
+    AOneHalf = AOneHalf.times(values.getV().inverse());
+    return AOneHalf;
   }
 
   protected Instances process(Instances inst) {
@@ -319,6 +356,12 @@ public class HDA
       }
       System.out.println("We found the within class scatter to be");
       System.out.println(withinClassScatter);
+      System.out.println("We take the following matrix to 1/2 and then -1/2");
+      System.out.println(covarianceMatrices.get(0));
+      System.out.println("To 1/2");
+      System.out.println(":" + matrixToOneHalf(covarianceMatrices.get(0), true));
+      System.out.println("To -1/2");
+      System.out.println(":" + matrixToOneHalf(covarianceMatrices.get(0), false));
     }
     return result;
   }
