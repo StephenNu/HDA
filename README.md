@@ -11,10 +11,14 @@ The next step is to ensure that weka.jar is in the $CLASSPATH variable.
 On Arch Linux if weka was installed from the AUR, the jar is found in /usr/share/java/weka/weka.jar.
 
 Next step is clone the repo,
-    git clone https://github.com/StephenNu/HDA.git
+```
+git clone https://github.com/StephenNu/HDA.git
+```
 
 After that is it as simple as
-    ./install.bash make\_package
+```
+./install.bash make\_package
+```
 
 Now in weka open the package manager and click "File/URL" under the unoffical section.
 Navigate to where the repo was cloned to, and go into the **dist/** folder, and select HDA.zip
