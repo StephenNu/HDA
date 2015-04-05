@@ -208,6 +208,25 @@ public class HDA
     return ScatterMatricies;
   }
 
+  protected Matrix withinClassScatterMatrix(
+          ArrayList<Matrix> covarianceMatrices,
+          ArrayList<Double> probabilities) {
+    if (covarianceMatrices.size() == 0 &&
+        covarianceMatrices.size() == probabilities.size()) {
+      System.out.println("Sorry no covarianceMatrices.");
+      System.out.println("Or probabilities were passed in.");
+      return null;
+    } else {
+      Matrix withinClassScatter = covarianceMatrices.get(0).copy();
+      for (int i = 1; i < covarianceMatrices.size(); ++i) {
+        withinClassScatter.plusEquals(
+                covarianceMatrices.get(i).times(probabilities.get(i))
+        );
+      }
+      return withinClassScatter;
+    }
+  }
+
   protected Instances process(Instances inst) {
 
     // double_matrix will be used to construct a matrix of the dataset.
@@ -223,6 +242,8 @@ public class HDA
             = betweenClassScatterMatricies(sampleMeans);
     ArrayList<ArrayList<Double>> relativeProbabilities 
             = calculateRelativeProbability(probabilities);
+    Matrix withinClassScatter
+            = withinClassScatterMatrix(covarianceMatrices, probabilities);
     // Instances is just a ArrayList<Instance> 
     Instances result = new Instances(determineOutputFormat(inst), 0);
 
@@ -296,6 +317,8 @@ public class HDA
           System.out.println(relativeProbabilities.get(i).get(j));
         }
       }
+      System.out.println("We found the within class scatter to be");
+      System.out.println(withinClassScatter);
     }
     return result;
   }
