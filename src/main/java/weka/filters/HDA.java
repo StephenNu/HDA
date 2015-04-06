@@ -333,6 +333,40 @@ public class HDA
   }
 
   /**
+   * @param relativeProbabilities   A list of lists of probabilites that will 
+   *                                be multiplied by the the corresponding 
+   *                                covariance matrices and used to create the
+   *                                combined scatter matrices.
+   * @param covarianceMatrices      A list of covariance matrices for each 
+   *                                class, to be multiplied by the relevant 
+   *                                probabilities.
+   *
+   * @return                        Returns a list of a list of matrices, 
+   *                                where the matrix at [i,j] is the combined 
+   *                                scatter matrices i and j
+   */
+  protected HashMap<Integer, HashMap<Integer, Matrix>> combineScatterMatrices(
+      HashMap<Integer, HashMap<Integer, Double>> relativeProbabilities, 
+      HashMap<Integer, Matrix> covarianceMatrices) {
+    HashMap<Integer, HashMap<Integer, Matrix>> combinedScatters 
+           = new HashMap<Integer, HashMap<Integer, Matrix>>(); 
+    for (Integer i : covarianceMatrices.keySet()) {
+      combinedScatters.put(i, new HashMap<Integer, Matrix>());
+      Matrix covar_i = covarianceMatrices.get(i);
+      for (Integer j : covarianceMatrices.keySet()) {
+        Matrix covar_j = covarianceMatrices.get(j);
+        Double prob_i = relativeProbabilities.get(i).get(j);
+        Double prob_j = relativeProbabilities.get(j).get(i);
+        Matrix scatter_ij = covar_i.times(prob_i).plus(covar_j.times(prob_j));
+
+        combinedScatters.get(i).put(j, scatter_ij);
+        }
+      }
+
+    return combinedScatters;
+  }
+
+  /**
    * @param sampleMeans A list of vectors that represent the ith mean
    *                    for each of the i classes.
    *
@@ -358,9 +392,9 @@ public class HDA
   }
 
   /**
-   * @param covarianceMatrices  A list of covariance matricies for each class
-   *                            , to be combined with the probabilities to form
-   *                             the Within Class Scatter Matrix.
+   * @param covarianceMatrices  A list of covariance matricies for each class,
+   *                            to be combined with the probabilities to form
+   *                            the Within Class Scatter Matrix.
    * @param probabilities       A list of probabilities for each class i.
    *
    * @return                    Returns all the sum of all covariance matricies
@@ -417,7 +451,6 @@ public class HDA
     AOneHalf = AOneHalf.times(values.getV().inverse());
     return AOneHalf;
   }
-
 
     public static void main(String[] args) {
       runFilter(new HDA(), args);
