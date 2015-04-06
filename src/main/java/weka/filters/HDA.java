@@ -492,11 +492,13 @@ public class HDA
     Matrix log_within_j = neg_root_within;
     log_within_j = log_within_j.times(covariance_j);
     log_within_j = log_within_j.times(neg_root_within);
+    log_within_j = matrixLog(log_within_j);
     log_within_j = log_within_j.times(rel_prob_j);
 
     Matrix log_within_i = neg_root_within;
     log_within_i = log_within_i.times(covariance_i);
     log_within_i = log_within_i.times(neg_root_within);
+    log_within_i = matrixLog(log_within_i);
     log_within_i = log_within_i.times(rel_prob_i);
 
     Matrix log_part = matrixLog(within_combined);
