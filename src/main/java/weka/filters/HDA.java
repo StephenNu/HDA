@@ -9,7 +9,8 @@ import weka.core.Instances;
 import weka.core.matrix.*;
 import weka.filters.SimpleBatchFilter;
 import java.util.ArrayList;
-
+import java.util.HashMap;
+import java.util.Map;
 public class HDA
   extends SimpleBatchFilter {
 
@@ -23,30 +24,172 @@ public class HDA
 
   public Capabilities getCapabilities() {
     Capabilities result = super.getCapabilities();
-    result.enableAllAttributes();
-    result.enableAllClasses(); 
-    //// filter doesn't need class to be set//
-    result.enable(Capability.NO_CLASS);
+    result.disableAll();
+    // Attributes
+    result.enable(Capability.DATE_ATTRIBUTES);
+    result.enable(Capability.NUMERIC_ATTRIBUTES);
+    result.enable(Capability.BINARY_ATTRIBUTES);
+    // Class
+    result.enable(Capability.NOMINAL_CLASS);
+    result.enable(Capability.NUMERIC_CLASS);
+    result.enable(Capability.BINARY_CLASS);
     return result;
   }
 
   protected Instances determineOutputFormat(Instances inputFormat) {
     Instances result = new Instances(inputFormat, 0);
-    result.insertAttributeAt(new Attribute("bla"), result.numAttributes());
     return result;
   }
   
+  protected Instances process(Instances inst) {
+
+    // double_matrix will be used to construct a matrix of the dataset.
+    double double_matrix[][] = new double[inst.size()][inst.numAttributes()];
+    // Construct all D_{i}
+    HashMap<Integer, Instances> disjointDataset
+            = seperateDatasetByClass(inst);
+    HashMap<Integer, Matrix> sampleMeans = findSampleMeans(disjointDataset);
+    HashMap<Integer, Matrix> covarianceMatrices
+            = findCovarianceMatrices(disjointDataset);
+    HashMap<Integer, Double> probabilities
+            = calculateProbability(disjointDataset);
+    HashMap<Integer, HashMap<Integer, Matrix>> scatterMatricies
+            = betweenClassScatterMatricies(sampleMeans);
+    HashMap<Integer, HashMap<Integer, Double>> relativeProbabilities
+            = calculateRelativeProbability(probabilities);
+    Matrix withinClassScatter
+            = withinClassScatterMatrix(covarianceMatrices, probabilities);
+    // Instances is just a ArrayList<Instance>
+    Instances result = new Instances(determineOutputFormat(inst), 0);
+
+    if (DEBUG) {
+      System.out.println("Instances as passed in\n" + inst);
+      System.out.println("result at the start:\n" + result.numAttributes());
+      System.out.println(result);
+      System.out.println("instance class index is " +
+              inst.classIndex() + " vs num attributes " +
+              inst.numAttributes());
+    }
+
+    /*
+     * Copies each of the old instance values to the new instance.
+     */
+    for (int i = 0; i < inst.numInstances(); i++) {
+      double[] values = new double[result.numAttributes()];
+      for (int n = 0; n < inst.numAttributes(); n++) {
+        values[n] = inst.instance(i).value(n);
+      }
+      // Copies over this instance of data to the array to construct the matrix.
+      double_matrix[i] = values;
+      // Adds the instance, which is just an array for weka.
+      result.add(new DenseInstance(1, values));
+    }
+
+    // Matrix with each row being a data point,
+    // last column is the class it belongs to.
+    Matrix matrix = new Matrix(double_matrix);
+
+    if (DEBUG) {
+      try {
+        System.out.println("Matrix was constructed as:");
+        System.out.println("first columns are attributes values, and "
+           + "last column is class number:\n" + matrix);
+        System.out.println("We have constructed the following disjointDataset");
+        for (Map.Entry<Integer, Instances> entry : disjointDataset.entrySet()) {
+            System.out.println("\ndisjointDataset number "
+                + entry.getKey() + " is \n");
+            for (int j = 0; j < entry.getValue().size(); ++j) {
+              for (int k = 0;
+                  k < entry.getValue().instance(j).numAttributes();
+                  ++k) {
+                System.out.print(""+ entry.getValue().instance(j).value(k));
+              }
+              System.out.println("");
+            }
+        }
+        for (Map.Entry<Integer, Matrix> entry : sampleMeans.entrySet()) {
+          System.out.println("We found that sample mean "
+              + entry.getKey() + " was\n");
+          System.out.println(sampleMeans.get(entry.getKey()));
+        }
+        for (Map.Entry<Integer, Matrix> entry : covarianceMatrices.entrySet()) {
+          System.out.println("We found that covariance matrix "
+              + entry.getKey() + " was\n");
+          System.out.println(covarianceMatrices.get(entry.getKey()));
+        }
+        for (Map.Entry<Integer, Double> entry : probabilities.entrySet()) {
+          System.out.println("We found probability for class "
+             + entry.getKey() + " was\n");
+          System.out.println(probabilities.get(entry.getKey()));
+        }
+        for (Map.Entry<Integer, HashMap<Integer, Matrix>> entry
+                : scatterMatricies.entrySet()) {
+          for (Map.Entry<Integer, Matrix> entry2
+                  : scatterMatricies.get(entry.getKey()).entrySet()) {
+            System.out.println("We found scattermatrix " +
+                "[" + entry.getKey() + ", " + entry2.getKey()+ "]");
+            System.out.println(
+                scatterMatricies.get(
+                  entry.getKey()
+                ).get(
+                  entry2.getKey()
+                )
+            );
+          }
+        }
+        for (Map.Entry<Integer, HashMap<Integer, Double>> entry
+            : relativeProbabilities.entrySet()) {
+          for (Map.Entry<Integer, Double> entry2
+              : relativeProbabilities.get(entry.getKey()).entrySet()) {
+            System.out.println("We found relative-prob "
+                +"[" + entry.getKey() + ", " + entry2.getKey()+ "]");
+            System.out.println(
+                relativeProbabilities.get(
+                  entry.getKey()
+                ).get(
+                  entry2.getKey()
+                )
+            );
+          }
+        }
+        System.out.println("We found the within class scatter to be");
+        System.out.println(withinClassScatter);
+        Map.Entry<Integer, Matrix> firstPair
+              = covarianceMatrices.entrySet().iterator().next();
+        System.out.println("We take the following matrix to 1/2 and then -1/2");
+        System.out.println(firstPair.getValue());
+        System.out.println("To 1/2");
+        System.out.println(":" + matrixToOneHalf(
+              firstPair.getValue(), true));
+        System.out.println("To -1/2");
+        System.out.println(":" + matrixToOneHalf(
+              firstPair.getValue(), false));
+      } catch (OutOfMemoryError E) {
+        System.out.println("Debug strings were to large to be printed");
+      }
+    }
+    return inst;
+  }
+
+
+
+
   /**
    * @param inst  a list of Instances , which will be seperated based on class.
    * @return      Returns the passed in instances seperated by class values.
    */
-  protected ArrayList<Instances> seperateDatasetByClass(Instances inst) {
-    int numAtt = inst.numAttributes() - 1;
-    ArrayList<Instances> disjointDataset 
-            = new ArrayList<Instances>(inst.numClasses());
+  protected HashMap<Integer, Instances> seperateDatasetByClass(
+          Instances inst) {
+    int numAtt = inst.numAttributes();
+    HashMap<Integer, Instances> disjointDataset
+            = new HashMap<Integer, Instances>();
 
-    for (int i = 0; i < inst.numClasses(); ++i) {
-      disjointDataset.add(new Instances(inst, 0));
+    for (int i = 0; i < inst.numInstances(); ++i) {
+      if (!disjointDataset.containsKey(inst.instance(i).classValue())) {
+        disjointDataset.put(
+            new Integer(
+              (int)inst.instance(i).classValue()), new Instances(inst, 0));
+      }
     }
     /*
      * We find the class of each instance, add a new "Instance" to
@@ -56,9 +199,7 @@ public class HDA
       final int class_value = (int)inst.instance(i).classValue();
       double[] values = new double[numAtt];
       for (int n = 0; n < inst.numAttributes(); n++) {
-        if (n != inst.instance(i).classIndex()) {
-          values[n] = inst.instance(i).value(n);
-        }
+        values[n] = inst.instance(i).value(n);
       }
       // Adds the instance, which is just an array for weka.
       disjointDataset.get(class_value).add(new DenseInstance(1, values));
@@ -73,15 +214,15 @@ public class HDA
    *                    each representing a mean of all sample data seperated by
    *                    classes.
    */
-  protected ArrayList<Matrix> findSampleMeans(
-          ArrayList<Instances> datasets) {
-    ArrayList<Matrix> medians = new ArrayList<Matrix>();
-    for (int i = 0; i < datasets.size(); ++i) {
-      if (datasets.get(i).numInstances() > 0) {
+  protected HashMap<Integer, Matrix> findSampleMeans(
+          HashMap<Integer, Instances> datasets) {
+    HashMap<Integer, Matrix> medians = new HashMap<Integer, Matrix>();
+    for (Map.Entry<Integer, Instances> entry : datasets.entrySet()) {
+        Instances inst = entry.getValue();
         double[] values 
-                = new double[datasets.get(i).instance(0).numAttributes()];
-        for (int k = 0; k < datasets.get(i).numInstances(); ++k) {
-          Instance current_instance = datasets.get(i).instance(k);
+                = new double[inst.numAttributes()-1];
+        for (int k = 0; k < inst.numInstances(); ++k) {
+          Instance current_instance = inst.instance(k);
           int l = 0;
           for (int j = 0; j < current_instance.numAttributes(); ++j) {
             if (current_instance.classIndex() != j) {
@@ -92,11 +233,10 @@ public class HDA
         }
         // We construct a vector and divide it by the size of the datasets.
         Matrix median_i = new Matrix(values, values.length);
-        median_i.timesEquals(1.0/(double)datasets.get(i).size());
-        medians.add(median_i);
-      } else {
-        System.out.println("No instances found for class value of " + i);
-      }
+        if (inst.size() > 0) {
+          median_i.timesEquals(1.0/(double)inst.size());
+        }
+        medians.put(entry.getKey(), median_i);
     }
     return medians;
   }
@@ -107,19 +247,20 @@ public class HDA
    * @return            Returns a list of covariance matricies each one
    *                    related to the dataset seperated by class.
    */
-  protected ArrayList<Matrix> findCovarianceMatrices(
-          ArrayList<Instances> datasets) {
-    ArrayList<Matrix> covarianceMatrices = new ArrayList<Matrix>();
-    ArrayList<Matrix> sampleMeans = findSampleMeans(datasets);
-    for (int i = 0; i < datasets.size(); ++i) {
-      if (datasets.get(i).numInstances() > 0) {
+  protected HashMap<Integer, Matrix> findCovarianceMatrices(
+          HashMap<Integer, Instances> datasets) {
+    HashMap<Integer, Matrix> covarianceMatrices
+            = new HashMap<Integer, Matrix>();
+    HashMap<Integer, Matrix> sampleMeans = findSampleMeans(datasets);
+    for (Map.Entry<Integer, Instances> entry : datasets.entrySet()) {
+        Instances inst = entry.getValue();
         double[][] val
-                 = new double[datasets.get(i).instance(0).numAttributes()]
-                             [datasets.get(i).instance(0).numAttributes()];
+                 = new double[inst.numAttributes()-1]
+                             [inst.numAttributes()-1];
         Matrix covariance_i = new Matrix(val);
-        for (int k = 0; k < datasets.get(i).numInstances(); ++k) {
-          Instance current_instance = datasets.get(i).instance(k);
-          double[] values = new double[current_instance.numAttributes()];
+        for (int k = 0; k < inst.numInstances(); ++k) {
+          Instance current_instance = inst.instance(k);
+          double[] values = new double[current_instance.numAttributes()-1];
           int l = 0;
           for (int j = 0; j < current_instance.numAttributes(); ++j) {
             if (current_instance.classIndex() != j) {
@@ -128,15 +269,17 @@ public class HDA
             }
           }
           Matrix single_example = new Matrix(values, values.length);
-          single_example.minusEquals(sampleMeans.get(i));
+          single_example.minusEquals(sampleMeans.get(entry.getKey()));
           single_example = single_example.times(single_example.transpose());
           covariance_i.plusEquals(single_example);
         }
-        covariance_i.timesEquals(1.0/(double)datasets.get(i).size());
-        covarianceMatrices.add(covariance_i);
+      if (inst.size() > 0) {
+        covariance_i.timesEquals(1.0/(double)inst.size());
+        covarianceMatrices.put(entry.getKey(), covariance_i);
       } else {
-        System.out.println("No instances found for class value of " + i);
-      } 
+        System.out.println("In covariance no instances of class "
+                           + entry.getKey());
+      }
     }
     return covarianceMatrices;
   }
@@ -147,16 +290,18 @@ public class HDA
    * @return            Returns a list of probabilities of each class
    *                    occuring in the provided dataset.
    */
-  protected ArrayList<Double> calculateProbability(
-          ArrayList<Instances> datasets) {
-    ArrayList<Double> probabilities = new ArrayList<Double>();
+  protected HashMap<Integer, Double> calculateProbability(
+          HashMap<Integer, Instances> datasets) {
+    HashMap<Integer, Double> probabilities = new HashMap<Integer, Double>();
     double sum = 0.0;
-    for (Instances inst : datasets) {
+    for (Instances inst : datasets.values()) {
       sum += inst.numInstances();
     }
 
-    for (Instances inst : datasets) {
-      probabilities.add(new Double(((double)inst.numInstances())/sum));
+    for (Map.Entry<Integer, Instances> entry : datasets.entrySet()) {
+      Instances inst = entry.getValue();
+      probabilities.put(
+              entry.getKey(), new Double(((double)inst.numInstances())/sum));
     }
     return probabilities;
   }
@@ -170,16 +315,18 @@ public class HDA
    *                      an example, it will belong to class i when only
    *                      considering examples belonging to either class i or j
    */
-  protected ArrayList<ArrayList<Double>> calculateRelativeProbability(
-          ArrayList<Double> probabilities) {
-    ArrayList<ArrayList<Double>> relativeProbabilities 
-            = new ArrayList<ArrayList<Double>>();
-    for (int i = 0; i < probabilities.size(); ++i) {
-      relativeProbabilities.add(new ArrayList<Double>());
-      for (int j = 0; j < probabilities.size(); ++j) {
-        double prob_i = probabilities.get(i).doubleValue();
-        double sampleSize = prob_i + probabilities.get(j).doubleValue();
-        relativeProbabilities.get(i).add(new Double(prob_i/sampleSize));
+  protected HashMap<Integer, HashMap<Integer, Double>>
+        calculateRelativeProbability(HashMap<Integer, Double> probabilities) {
+    HashMap<Integer, HashMap<Integer, Double>> relativeProbabilities
+            = new HashMap<Integer, HashMap<Integer, Double>>();
+    for (Integer idxi : probabilities.keySet()) {
+      relativeProbabilities.put(idxi, new HashMap<Integer, Double>());
+      for (Integer idxj : probabilities.keySet()) {
+        double prob_i = probabilities.get(idxi).doubleValue();
+        double sampleSize = prob_i + probabilities.get(idxj).doubleValue();
+        relativeProbabilities.get(idxi).put
+          (idxj, new Double(prob_i/sampleSize)
+        );
       }
     }
     return relativeProbabilities;
@@ -194,15 +341,17 @@ public class HDA
    *                    (meani - meanj)*transpose(meani - meanj)
    *
    */
-  protected ArrayList<ArrayList<Matrix>> betweenClassScatterMatricies(
-      ArrayList<Matrix> sampleMeans) {
-    ArrayList<ArrayList<Matrix>> ScatterMatricies 
-            = new ArrayList<ArrayList<Matrix>>();
-    for (int i = 0; i < sampleMeans.size(); ++i) {
-      ScatterMatricies.add(new ArrayList<Matrix>());
-      for (int j = 0; j < sampleMeans.size(); ++j) {
-        Matrix scatter = sampleMeans.get(i).minus(sampleMeans.get(j));
-        ScatterMatricies.get(i).add(scatter.times(scatter.transpose()));
+  protected HashMap<Integer, HashMap<Integer, Matrix>>
+    betweenClassScatterMatricies(HashMap<Integer, Matrix> sampleMeans) {
+    HashMap<Integer, HashMap<Integer, Matrix>> ScatterMatricies
+            = new HashMap<Integer, HashMap<Integer, Matrix>>();
+    for (Integer idxi : sampleMeans.keySet()) {
+      ScatterMatricies.put(idxi, new HashMap<Integer, Matrix>());
+      for (Integer idxj : sampleMeans.keySet()) {
+        Matrix scatter = sampleMeans.get(idxi).minus(sampleMeans.get(idxj));
+        ScatterMatricies.get(idxi).put
+          (idxj, scatter.times(scatter.transpose())
+        );
       }
     }
     return ScatterMatricies;
@@ -218,18 +367,21 @@ public class HDA
    *                            times their respective probability.
    */
   protected Matrix withinClassScatterMatrix(
-          ArrayList<Matrix> covarianceMatrices,
-          ArrayList<Double> probabilities) {
+          HashMap<Integer, Matrix> covarianceMatrices,
+          HashMap<Integer, Double> probabilities) {
     if (covarianceMatrices.size() == 0 &&
         covarianceMatrices.size() == probabilities.size()) {
       System.out.println("Sorry no covarianceMatrices.");
       System.out.println("Or probabilities were passed in.");
       return null;
     } else {
-      Matrix withinClassScatter = covarianceMatrices.get(0).copy();
-      for (int i = 1; i < covarianceMatrices.size(); ++i) {
+      Matrix withinClassScatter = null;
+      for (Integer idxi : covarianceMatrices.keySet()) {
+        if (withinClassScatter == null) {
+          withinClassScatter = covarianceMatrices.get(idxi).copy();
+        }
         withinClassScatter.plusEquals(
-                covarianceMatrices.get(i).times(probabilities.get(i))
+                covarianceMatrices.get(idxi).times(probabilities.get(idxi))
         );
       }
       return withinClassScatter;
@@ -247,7 +399,9 @@ public class HDA
   protected Matrix matrixToOneHalf(Matrix A, boolean positivePower) {
     EigenvalueDecomposition values = new EigenvalueDecomposition(A);
     Matrix M = values.getD();
-    for (int i = 0; i < M.getColumnDimension() && i < M.getRowDimension(); ++i) {
+    int M_rows = M.getRowDimension();
+    int M_cols = M.getColumnDimension();
+    for (int i = 0; i < M_rows && i < M_cols; ++i) {
       M.getArray()[i][i]
           = (positivePower) ?
               Math.sqrt(M.getArray()[i][i]) : 1.0/Math.sqrt(M.getArray()[i][i]);
@@ -264,107 +418,6 @@ public class HDA
     return AOneHalf;
   }
 
-  protected Instances process(Instances inst) {
-
-    // double_matrix will be used to construct a matrix of the dataset.
-    double double_matrix[][] = new double[inst.size()][inst.numAttributes()];
-    // Construct all D_{i}
-    ArrayList<Instances> disjointDataset 
-            = seperateDatasetByClass(inst);
-    ArrayList<Matrix> sampleMeans = findSampleMeans(disjointDataset);
-    ArrayList<Matrix> covarianceMatrices 
-            = findCovarianceMatrices(disjointDataset);
-    ArrayList<Double> probabilities = calculateProbability(disjointDataset);
-    ArrayList<ArrayList<Matrix>> scatterMatricies 
-            = betweenClassScatterMatricies(sampleMeans);
-    ArrayList<ArrayList<Double>> relativeProbabilities 
-            = calculateRelativeProbability(probabilities);
-    Matrix withinClassScatter
-            = withinClassScatterMatrix(covarianceMatrices, probabilities);
-    // Instances is just a ArrayList<Instance> 
-    Instances result = new Instances(determineOutputFormat(inst), 0);
-
-    if (DEBUG) {
-      System.out.println("Instances as passed in\n" + inst);
-      System.out.println("result at the start:\n" + result.numAttributes());
-      System.out.println(result);
-      System.out.println("instance class index is " + 
-              inst.instance(0).classIndex() + " vs num attributes " +
-              inst.numAttributes());
-    }
-    
-    /* 
-     * Copies each of the old instance values to the new instance, 
-     * and then sets the attribute "bla" to the correct instance index.
-     */
-    for (int i = 0; i < inst.numInstances(); i++) {
-      double[] values = new double[result.numAttributes()];
-      for (int n = 0; n < inst.numAttributes(); n++) {
-        values[n] = inst.instance(i).value(n);
-      }
-      // sets attribute bla
-      values[values.length - 1] = i;
-      // Copies over this instance of data to the array to construct the matrix.
-      double_matrix[i] = values;
-      // Adds the instance, which is just an array for weka.
-      result.add(new DenseInstance(1, values));
-    }
-
-    // Matrix with each row being a data point, 
-    // last column is the class it belongs to.
-    Matrix matrix = new Matrix(double_matrix);
-
-    if (DEBUG) {
-      System.out.println("Matrix was constructed as:");
-      System.out.println("first columns are attributes values, and second last"
-          +" column is class number, last column is Attribute bla:\n" + matrix);
-      System.out.println("We have constructed the following disjointDataset");
-      for (int i = 0; i < disjointDataset.size(); ++i) {
-          System.out.println("\ndisjointDataset number " + i + " is \n");
-          for (int j = 0; j < disjointDataset.get(i).size(); ++j) {
-            for (int k = 0; 
-                k < disjointDataset.get(i).instance(j).numAttributes(); 
-                ++k) {
-              System.out.print(""+ disjointDataset.get(i).instance(j).value(k));
-            }
-            System.out.println("");
-          }
-      }
-      for (int i = 0; i < sampleMeans.size(); ++i) {
-        System.out.println("We found that sample mean " + i + " was\n");
-        System.out.println(sampleMeans.get(i));
-      }
-      for (int i = 0; i < covarianceMatrices.size(); ++i) {
-        System.out.println("We found that covariance matrix " + i + " was\n");
-        System.out.println(covarianceMatrices.get(i));
-      }
-      for (int i = 0; i < probabilities.size(); ++i) {
-        System.out.println("We found probability for class " + i + " was\n");
-        System.out.println(probabilities.get(i));
-      }
-      for (int i = 0; i < scatterMatricies.size(); ++i) {
-        for (int j = 0; j < scatterMatricies.get(i).size(); ++j) {
-          System.out.println("We found scattermatrix [" + i + ", " + j + "]");
-          System.out.println(scatterMatricies.get(i).get(j));
-        }
-      }
-      for (int i = 0; i < relativeProbabilities.size(); ++i) {
-        for (int j = 0; j < relativeProbabilities.get(i).size(); ++j) {
-          System.out.println("We found relative-prob [" + i + ", " + j + "]");
-          System.out.println(relativeProbabilities.get(i).get(j));
-        }
-      }
-      System.out.println("We found the within class scatter to be");
-      System.out.println(withinClassScatter);
-      System.out.println("We take the following matrix to 1/2 and then -1/2");
-      System.out.println(covarianceMatrices.get(0));
-      System.out.println("To 1/2");
-      System.out.println(":" + matrixToOneHalf(covarianceMatrices.get(0), true));
-      System.out.println("To -1/2");
-      System.out.println(":" + matrixToOneHalf(covarianceMatrices.get(0), false));
-    }
-    return result;
-  }
 
     public static void main(String[] args) {
       runFilter(new HDA(), args);
