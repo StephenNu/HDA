@@ -11,6 +11,7 @@ import weka.filters.SimpleBatchFilter;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
+
 public class HDA
   extends SimpleBatchFilter {
 
@@ -47,7 +48,7 @@ public class HDA
     double double_matrix[][] = new double[inst.size()][inst.numAttributes()];
     // Construct all D_{i}
     HashMap<Integer, Instances> disjointDataset
-            = seperateDatasetByClass(inst);
+            = separateDatasetByClass(inst);
     HashMap<Integer, Matrix> sampleMeans = findSampleMeans(disjointDataset);
     HashMap<Integer, Matrix> covarianceMatrices
             = findCovarianceMatrices(disjointDataset);
@@ -182,7 +183,7 @@ public class HDA
    * @param inst  a list of Instances , which will be seperated based on class.
    * @return      Returns the passed in instances seperated by class values.
    */
-  protected HashMap<Integer, Instances> seperateDatasetByClass(
+  protected HashMap<Integer, Instances> separateDatasetByClass(
           Instances inst) {
     int numAtt = inst.numAttributes();
     HashMap<Integer, Instances> disjointDataset
