@@ -60,6 +60,8 @@ public class HDA
             = calculateRelativeProbability(probabilities);
     Matrix withinClassScatter
             = withinClassScatterMatrix(covarianceMatrices, probabilities);
+    HashMap<Integer, HashMap<Integer, Matrix>> combinedScatters
+            = combineScatterMatrices(relativeProbabilities, covarianceMatrices);
     // Instances is just a ArrayList<Instance>
     Instances result = new Instances(determineOutputFormat(inst), 0);
 
@@ -169,6 +171,14 @@ public class HDA
         System.out.println(firstPair.getValue());
         System.out.println("log(A)");
         System.out.println(":\n" + matrixLog(firstPair.getValue()));
+
+        System.out.println("Finding solution:");
+        //i, j, in, between, rel, com, co, pro
+        Matrix solution = solutionIteration(0, 1, withinClassScatter,
+            scatterMatricies, relativeProbabilities, combinedScatters,
+            covarianceMatrices, probabilities);
+
+        System.out.println("SOLUTION IS THIS OKAY THANKS\n" + solution);
       } catch (OutOfMemoryError E) {
         System.out.println("Debug strings were to large to be printed");
       }
@@ -486,23 +496,22 @@ public class HDA
    * @param theres_like_eight fix later
    * @return                  uggggh
    */
-/*
   protected Matrix solutionIteration(int i, int j, Matrix withinClassScatter,
       HashMap<Integer, HashMap<Integer, Matrix>> betweenClassScatters,
       HashMap<Integer, HashMap<Integer, Double>> relativeProbabilities,
       HashMap<Integer, HashMap<Integer, Matrix>> combinedScatters,
       HashMap<Integer, Matrix> covariances,
       HashMap<Integer, Double> probabilities) {
-
     // Just a bunch of things to get the ball rolling
     double prob = probabilities.get(i) * probabilities.get(j);
     double rel_prob_i = relativeProbabilities.get(i).get(j);
     double rel_prob_j = relativeProbabilities.get(j).get(i);
-    double rel_prob_inverse = 1 / (rel_prob_i * real_prob_j);
+    double rel_prob_inverse = 1 / (rel_prob_i * rel_prob_j);
 
     Matrix pos_root_within = matrixToOneHalf(withinClassScatter, true);
     Matrix neg_root_within = matrixToOneHalf(withinClassScatter, false);
     Matrix within_inverse = withinClassScatter.inverse();
+
     Matrix combined_scatter = combinedScatters.get(i).get(j);
     Matrix between_scatter = betweenClassScatters.get(i).get(j);
     Matrix covariance_i = covariances.get(i);
@@ -510,8 +519,7 @@ public class HDA
 
     // The fun bit
     Matrix solution = within_inverse;
-    solution = solution.times(prob_i);
-    solution = solution.times(prob_j);
+    solution = solution.times(prob);
     solution = solution.times(pos_root_within);
     
     Matrix within_combined = neg_root_within;
@@ -545,10 +553,9 @@ public class HDA
 
     solution = solution.times(bracket_part);
     solution = solution.times(pos_root_within);
-
     return solution;
   }
-*/
+
     public static void main(String[] args) {
       runFilter(new HDA(), args);
     }
