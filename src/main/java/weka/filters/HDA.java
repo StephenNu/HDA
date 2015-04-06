@@ -452,6 +452,72 @@ public class HDA
     return AOneHalf;
   }
 
+  /**
+   * @param all_of_them       ugggh
+   * @param theres_like_eight fix later
+   * @return                  uggggh
+   */
+/*
+  protected Matrix solutionIteration(int i, int j, Matrix withinClassScatter,
+      HashMap<Integer, HashMap<Integer, Matrix>> betweenClassScatters,
+      HashMap<Integer, HashMap<Integer, Double>> relativeProbabilities,
+      HashMap<Integer, HashMap<Integer, Matrix>> combinedScatters,
+      HashMap<Integer, Matrix> covariances,
+      HashMap<Integer, Double> probabilities) {
+
+    // Just a bunch of things to get the ball rolling
+    double prob = probabilities.get(i) * probabilities.get(j);
+    double rel_prob_i = relativeProbabilities.get(i).get(j);
+    double rel_prob_j = relativeProbabilities.get(j).get(i);
+    double rel_prob_inverse = 1 / (rel_prob_i * real_prob_j);
+
+    Matrix pos_root_within = matrixToOneHalf(withinClassScatter, true);
+    Matrix neg_root_within = matrixToOneHalf(withinClassScatter, false);
+    Matrix within_inverse = withinClassScatter.inverse();
+    Matrix combined_scatter = combinedScatters.get(i).get(j);
+    Matrix between_scatter = betweenClassScatters.get(i).get(j);
+    Matrix covariance_i = covariances.get(i);
+    Matrix covariance_j = covariances.get(j);
+
+    // The fun bit
+    Matrix solution = within_inverse;
+    solution = solution.times(prob_i);
+    solution = solution.times(prob_j);
+    solution = solution.times(pos_root_within);
+    
+    Matrix within_combined = neg_root_within;
+    within_combined = within_combined.times(combined_scatter);
+    within_combined = within_combined.times(neg_root_within);
+
+    Matrix log_within_j = neg_root_within;
+    log_within_j = log_within_j.times(covariance_j);
+    log_within_j = log_within_j.times(neg_root_within);
+    log_within_j = log_within_j.times(rel_prob_j);
+
+    Matrix log_within_i = neg_root_within;
+    log_within_i = log_within_i.times(covariance_i);
+    log_within_i = log_within_i.times(neg_root_within);
+    log_within_i = log_within_i.times(rel_prob_i);
+
+    Matrix log_part = matrixLog(within_combined);
+    log_part = log_part.minus(log_within_i);
+    log_part = log_part.minus(log_within_j);
+    log_part = log_part.times(rel_prob_inverse);
+
+    Matrix root_within_combined = matrixToOneHalf(within_combined, false);
+    Matrix bracket_part = root_within_combined;
+    bracket_part = bracket_part.times(neg_root_within);
+    bracket_part = bracket_part.times(between_scatter);
+    bracket_part = bracket_part.times(neg_root_within);
+    bracket_part = bracket_part.times(root_within_combined);
+    bracket_part = bracket_part.plus(log_part);
+
+    solution = solution.times(bracket_part);
+    solution = solution.times(pos_root_within);
+
+    return solution;
+  }
+*/
     public static void main(String[] args) {
       runFilter(new HDA(), args);
     }
