@@ -164,6 +164,10 @@ public class HDA
         System.out.println("To -1/2");
         System.out.println(":" + matrixToOneHalf(
               firstPair.getValue(), false));
+        System.out.println("We take the following matrix and apply log");
+        System.out.println(firstPair.getValue());
+        System.out.println("log(A)");
+        System.out.println(":\n" + matrixLog(firstPair.getValue()));
       } catch (OutOfMemoryError E) {
         System.out.println("Debug strings were to large to be printed");
       }
@@ -450,6 +454,30 @@ public class HDA
     AOneHalf = AOneHalf.times(M);
     AOneHalf = AOneHalf.times(values.getV().inverse());
     return AOneHalf;
+  }
+
+  /**
+   * @param A                   A matrix to apply the log too.
+   *
+   * @return                    Returns the matrix log(A)
+   */
+  protected Matrix matrixLog(Matrix A) {
+    EigenvalueDecomposition values = new EigenvalueDecomposition(A);
+    Matrix M = values.getD();
+    int M_rows = M.getRowDimension();
+    int M_cols = M.getColumnDimension();
+    for (int i = 0; i < M_rows && i < M_cols; ++i) {
+      M.getArray()[i][i] = Math.log(M.getArray()[i][i]);
+    }
+    if (DEBUG) {
+      System.out.println("Working with eigenvectors \n" + values.getV());
+      System.out.println("and eignvalues \n" + values.getD());
+      System.out.println("and changed values\n" + M);
+    }
+    Matrix logA = values.getV().copy();
+    logA = logA.times(M);
+    logA = logA.times(values.getV().inverse());
+    return logA;
   }
 
   /**
