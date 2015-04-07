@@ -124,6 +124,63 @@ public class HDATest
     }
   }
 
+  public void testCombineScatterMatrices() {
+    final double PROB_00 = 0.75;
+    final double PROB_01 = 3;
+    final double PROB_10 = 1.75;
+    final double PROB_11 = 2.33;
+    final Matrix COVARIANCE_0 = new Matrix(3, 3, 0.8);
+    final Matrix COVARIANCE_1 = new Matrix(3, 3, 2.73);
+
+    double ANS_00 = 1.2;
+    double ANS_01 = 7.1775;
+    double ANS_10 = 7.1775;
+    double ANS_11 = 12.7218;
+
+    HashMap<Integer, HashMap<Integer, Double>> testProbabilities
+        = new HashMap<Integer, HashMap<Integer, Double>>();
+
+    testProbabilities.put(0, new HashMap<Integer, Double>());
+    testProbabilities.put(1, new HashMap<Integer, Double>());
+    testProbabilities.get(0).put(0, PROB_00);
+    testProbabilities.get(0).put(1, PROB_01);
+    testProbabilities.get(1).put(0, PROB_10);
+    testProbabilities.get(1).put(1, PROB_11);
+
+    HashMap<Integer, Matrix> covarianceMatrices 
+        = new HashMap<Integer, Matrix>();
+  
+    covarianceMatrices.put(0, COVARIANCE_0);
+    covarianceMatrices.put(1, COVARIANCE_1);
+
+
+    //Making arrays is too hard
+    HDA filter = (HDA)getFilter();
+    HashMap<Integer, HashMap<Integer, Matrix>> combinedScatters
+        = filter.combineScatterMatrices(testProbabilities, covarianceMatrices);
+    Matrix scatter_00 = combinedScatters.get(0).get(0);
+    Matrix scatter_01 = combinedScatters.get(0).get(1);
+    Matrix scatter_10 = combinedScatters.get(1).get(0);
+    Matrix scatter_11 = combinedScatters.get(1).get(1);
+
+    for (int i = 0; i < 2; ++i) {
+      assertTrue(combinedScatters.containsKey(i));
+    }
+    for (int i = 0; i < 2; ++i) {
+      for (int j = 0; j < 2; ++j) {
+        assertTrue(scatter_00.getArray()[i][j] >= ANS_00 - DELTA && 
+                   scatter_00.getArray()[i][j] <= ANS_00 + DELTA);
+        assertTrue(scatter_01.getArray()[i][j] >= ANS_01 - DELTA && 
+                   scatter_01.getArray()[i][j] <= ANS_01 + DELTA);
+        assertTrue(scatter_10.getArray()[i][j] >= ANS_10 - DELTA && 
+                   scatter_10.getArray()[i][j] <= ANS_10 + DELTA);
+        assertTrue(scatter_11.getArray()[i][j] >= ANS_11 - DELTA && 
+                   scatter_11.getArray()[i][j] <= ANS_11 + DELTA);
+      }
+    }
+
+  }
+  
   public static Test suite() {
     return new TestSuite(HDATest.class);
   }
