@@ -11,7 +11,6 @@ import weka.filters.SimpleBatchFilter;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Set;
 
 public class HDA
   extends SimpleBatchFilter {
@@ -55,8 +54,8 @@ public class HDA
             = findCovarianceMatrices(disjointDataset);
     HashMap<Integer, Double> probabilities
             = calculateProbability(disjointDataset);
-    HashMap<Integer, HashMap<Integer, Matrix>> scatterMatricies
-            = betweenClassScatterMatricies(sampleMeans);
+    HashMap<Integer, HashMap<Integer, Matrix>> scatterMatrices
+            = betweenClassScatterMatrices(sampleMeans);
     HashMap<Integer, HashMap<Integer, Double>> relativeProbabilities
             = calculateRelativeProbability(probabilities);
     Matrix withinClassScatter
@@ -127,13 +126,13 @@ public class HDA
           System.out.println(probabilities.get(entry.getKey()));
         }
         for (Map.Entry<Integer, HashMap<Integer, Matrix>> entry
-                : scatterMatricies.entrySet()) {
+                : scatterMatrices.entrySet()) {
           for (Map.Entry<Integer, Matrix> entry2
-                  : scatterMatricies.get(entry.getKey()).entrySet()) {
+                  : scatterMatrices.get(entry.getKey()).entrySet()) {
             System.out.println("We found scattermatrix " +
                 "[" + entry.getKey() + ", " + entry2.getKey()+ "]");
             System.out.println(
-                scatterMatricies.get(
+                scatterMatrices.get(
                   entry.getKey()
                 ).get(
                   entry2.getKey()
@@ -175,13 +174,13 @@ public class HDA
 
         System.out.println("Finding solution:");
         Matrix solution = solutionIteration(0, 1, withinClassScatter,
-            scatterMatricies, relativeProbabilities, combinedScatters,
+            scatterMatrices, relativeProbabilities, combinedScatters,
             covarianceMatrices, probabilities);
 
         System.out.println("SOLUTION IS THIS OKAY THANKS\n" + solution);
 
         System.out.println("Finding final solution");
-        Matrix summation = solution(withinClassScatter, scatterMatricies,
+        Matrix summation = solution(withinClassScatter, scatterMatrices,
             relativeProbabilities, combinedScatters, covarianceMatrices,
             probabilities);
 
@@ -399,19 +398,19 @@ public class HDA
    *
    */
   protected HashMap<Integer, HashMap<Integer, Matrix>>
-    betweenClassScatterMatricies(HashMap<Integer, Matrix> sampleMeans) {
-    HashMap<Integer, HashMap<Integer, Matrix>> ScatterMatricies
+    betweenClassScatterMatrices(HashMap<Integer, Matrix> sampleMeans) {
+    HashMap<Integer, HashMap<Integer, Matrix>> ScatterMatrices
             = new HashMap<Integer, HashMap<Integer, Matrix>>();
     for (Integer idxi : sampleMeans.keySet()) {
-      ScatterMatricies.put(idxi, new HashMap<Integer, Matrix>());
+      ScatterMatrices.put(idxi, new HashMap<Integer, Matrix>());
       for (Integer idxj : sampleMeans.keySet()) {
         Matrix scatter = sampleMeans.get(idxi).minus(sampleMeans.get(idxj));
-        ScatterMatricies.get(idxi).put
+        ScatterMatrices.get(idxi).put
           (idxj, scatter.times(scatter.transpose())
         );
       }
     }
-    return ScatterMatricies;
+    return ScatterMatrices;
   }
 
   /**
