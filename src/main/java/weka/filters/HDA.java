@@ -11,6 +11,7 @@ import weka.filters.SimpleBatchFilter;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 
 public class HDA
   extends SimpleBatchFilter {
@@ -173,12 +174,19 @@ public class HDA
         System.out.println(":\n" + matrixLog(firstPair.getValue()));
 
         System.out.println("Finding solution:");
-        //i, j, in, between, rel, com, co, pro
         Matrix solution = solutionIteration(0, 1, withinClassScatter,
             scatterMatricies, relativeProbabilities, combinedScatters,
             covarianceMatrices, probabilities);
 
         System.out.println("SOLUTION IS THIS OKAY THANKS\n" + solution);
+
+        System.out.println("Finding final solution");
+        Matrix summation = solution(withinClassScatter, scatterMatricies,
+            relativeProbabilities, combinedScatters, covarianceMatrices,
+            probabilities);
+
+        //Put tests above this
+        System.out.println("This line is to let you know everything finished");
       } catch (OutOfMemoryError E) {
         System.out.println("Debug strings were to large to be printed");
       }
@@ -489,6 +497,46 @@ public class HDA
     logA = logA.times(M);
     logA = logA.times(values.getV().inverse());
     return logA;
+  }
+
+
+//FIXME - Jeremy
+//Once we know what this is supposed to do, I'll fix it
+  protected Matrix solution(Matrix withinClassScatter,
+      HashMap<Integer, HashMap<Integer, Matrix>> betweenClassScatters,
+      HashMap<Integer, HashMap<Integer, Double>> relativeProbabilities,
+      HashMap<Integer, HashMap<Integer, Matrix>> combinedScatters,
+      HashMap<Integer, Matrix> covariances,
+      HashMap<Integer, Double> probabilities) {
+    int rows = withinClassScatter.getRowDimension();
+    int columns = withinClassScatter.getColumnDimension();
+    double[] eigenvalues = new double[rows];
+    Matrix summation = new Matrix(rows, columns);
+
+    for (Integer i : covariances.keySet()) {
+      for (Integer j : covariances.keySet()) {
+        if (i > j) {
+          summation = summation.plus(solutionIteration(i, j, withinClassScatter,
+                betweenClassScatters, relativeProbabilities, combinedScatters,
+                covariances, probabilities));
+        }
+      }
+    }
+    EigenvalueDecomposition values = new EigenvalueDecomposition(summation);
+
+    for (int i = 0; i < rows; ++i) {
+      eigenvalues[i] = values.getD().getArray()[i][i];
+    }
+
+    if (DEBUG) {
+      System.out.println("Eigenvectors \n" + values.getV());
+      System.out.println("Eigenvalues \n" + values.getD());
+      for (int i = 0; i < rows; ++i) {
+        System.out.println(eigenvalues[i] + " ");
+      }
+    }
+
+    return summation;
   }
 
   /**
