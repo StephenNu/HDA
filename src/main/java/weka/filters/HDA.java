@@ -600,6 +600,7 @@ public class HDA
 
     solution = solution.times(bracket_part);
     solution = solution.times(pos_root_within);
+
     return solution;
   }
 
