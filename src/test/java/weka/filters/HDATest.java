@@ -21,6 +21,7 @@ import weka.filters.HDA;
 
 import junit.framework.Test;
 import junit.framework.TestSuite;
+import org.junit.Assert;
 
 public class HDATest
   extends AbstractFilterTest {
@@ -58,6 +59,23 @@ public class HDATest
    */
   public Filter getFilter() {
     return new HDA();
+  }
+
+
+  public static void assertArrayEquals(double[][] expected, 
+                                       double[][] actual, 
+                                       double delta) {
+    if (actual == null && expected == null) {
+      return;
+    }
+
+    if (actual.length != expected.length) {
+      fail("The array dimensions are different.");
+    }
+
+    for (int i = 0; i < actual.length; ++i) {
+      Assert.assertArrayEquals(expected[i], actual[i], delta);
+    }
   }
 
   /**
@@ -145,11 +163,46 @@ public class HDATest
 
     for (int i = 0; i < 3; ++i) {
       for (int j = 0; j < 3; ++j) {
-        assertTrue(relativeProbabilities.get(i).get(j) >= ANS[i][j] - DELTA &&
-                   relativeProbabilities.get(i).get(j) <= ANS[i][j] + DELTA);
+        assertEquals(ANS[i][j], relativeProbabilities.get(i).get(j), DELTA);
       }
     }
-    
+  }
+
+  public void testBetweenClassScatterMatrices() {
+    final Matrix MEAN_0 = new Matrix(3, 1, 1);
+    final Matrix MEAN_1 = new Matrix(3, 1, 1);
+
+    final double[][] M_2 = {{1},
+                            {3},
+                            {5}};
+    final Matrix MEAN_2 = new Matrix(M_2);
+
+    final double[][] ZERO = {{0, 0, 0},
+                             {0, 0, 0},
+                             {0, 0, 0}};
+    final double[][] ANS1 = {{0, 0, 0},
+                             {0, 4, 8},
+                             {0, 8, 16}};
+
+    final double[][][][] EXPECTED = {{ZERO, ZERO, ANS1},
+                                     {ZERO, ZERO, ANS1},
+                                     {ANS1, ANS1, ZERO}};
+
+    HashMap<Integer, Matrix> sampleMeans = new HashMap<Integer, Matrix>();
+    sampleMeans.put(0, MEAN_0);
+    sampleMeans.put(1, MEAN_1);
+    sampleMeans.put(2, MEAN_2);
+
+    HDA filter = (HDA)getFilter();
+    HashMap<Integer, HashMap<Integer, Matrix>> betweenScatters
+            = filter.betweenClassScatterMatrices(sampleMeans);
+
+    for (int i = 0; i < 3; ++i) {
+      for (int j = 0; j < 3; ++j) {
+        assertArrayEquals(EXPECTED[i][j], 
+              betweenScatters.get(i).get(j).getArray(), DELTA);
+      }
+    }
   }
 
   public void testCombineScatterMatrices() {
@@ -160,10 +213,13 @@ public class HDATest
     final Matrix COVARIANCE_0 = new Matrix(3, 3, 0.8);
     final Matrix COVARIANCE_1 = new Matrix(3, 3, 2.73);
 
-    final double ANS_00 = 1.2048;
-    final double ANS_01 = 7.1775;
-    final double ANS_10 = 7.1775;
-    final double ANS_11 = 12.7218;
+    final Matrix ANS_00 = new Matrix(3, 3, 1.2048);
+    final Matrix ANS_01 = new Matrix(3, 3, 7.1775);
+    final Matrix ANS_10 = new Matrix(3, 3, 7.1775);
+    final Matrix ANS_11 = new Matrix(3, 3, 12.7218);
+
+    final Matrix[][] EXPECTED = {{ANS_00, ANS_01},
+                                 {ANS_10, ANS_11}};
 
     HashMap<Integer, HashMap<Integer, Double>> testProbabilities
         = new HashMap<Integer, HashMap<Integer, Double>>();
@@ -186,24 +242,13 @@ public class HDATest
     HDA filter = (HDA)getFilter();
     HashMap<Integer, HashMap<Integer, Matrix>> combinedScatters
         = filter.combineScatterMatrices(testProbabilities, covarianceMatrices);
-    Matrix scatter_00 = combinedScatters.get(0).get(0);
-    Matrix scatter_01 = combinedScatters.get(0).get(1);
-    Matrix scatter_10 = combinedScatters.get(1).get(0);
-    Matrix scatter_11 = combinedScatters.get(1).get(1);
 
     for (int i = 0; i < 2; ++i) {
       assertTrue(combinedScatters.containsKey(i));
     }
-    for (int i = 0; i < 3; ++i) {
-      for (int j = 0; j < 3; ++j) {
-        assertTrue(scatter_00.getArray()[i][j] >= ANS_00 - DELTA && 
-                   scatter_00.getArray()[i][j] <= ANS_00 + DELTA);
-        assertTrue(scatter_01.getArray()[i][j] >= ANS_01 - DELTA && 
-                   scatter_01.getArray()[i][j] <= ANS_01 + DELTA);
-        assertTrue(scatter_10.getArray()[i][j] >= ANS_10 - DELTA && 
-                   scatter_10.getArray()[i][j] <= ANS_10 + DELTA);
-        assertTrue(scatter_11.getArray()[i][j] >= ANS_11 - DELTA && 
-                   scatter_11.getArray()[i][j] <= ANS_11 + DELTA);
+    for (int i = 0; i < 2; ++i) {
+      for (int j = 0; j < 2; ++j) {
+        assertArrayEquals(EXPECTED[i][j].getArray(), combinedScatters.get(i).get(j).getArray(), DELTA);
       }
     }
   }
@@ -214,7 +259,9 @@ public class HDATest
     final Matrix COVARIANCE_0 = new Matrix(3, 3, 0.8);
     final Matrix COVARIANCE_1 = new Matrix(3, 3, 2.73);
 
-    final double ANS = 8.7924;
+    final double ANS = PROB_0 * COVARIANCE_0.get(0,0) + 
+                       PROB_1 * COVARIANCE_1.get(0,0);
+    final Matrix EXPECTED = new Matrix(3, 3, ANS);
 
     HashMap<Integer, Matrix> covariances = new HashMap<Integer, Matrix>();
     covariances.put(0, COVARIANCE_0);
@@ -228,12 +275,7 @@ public class HDATest
     Matrix withinClassScatter 
             = filter.withinClassScatterMatrix(covariances, probabilities);
 
-    for (int i = 0; i < 3; ++i) {
-      for (int j = 0; j < 3; ++j) {
-        assertTrue(withinClassScatter.getArray()[i][j] >= ANS - DELTA &&
-                   withinClassScatter.getArray()[i][j] <= ANS + DELTA);
-      }
-    }
+    assertArrayEquals(EXPECTED.getArray(), withinClassScatter.getArray(), DELTA);
 
   }
 
@@ -253,46 +295,39 @@ public class HDATest
                               {0, 1}};
     final double[][] ANS_3 = {{1, 0},
                               {0, 1}};
-    final double[][] ANS_4 = {{2.0d/3, -1.0d/3},
-                              {-1.0d/3, 2.0d/3}};
+    final double[][] ANS_4 = {{2/3d, -1/3d},
+                              {-1/3d, 2/3d}};
+
+    final double[][][][] EXPECTED = {{ANS_1, ANS_2},
+                                     {ANS_3, ANS_4}};
 
     HDA filter = (HDA)getFilter();
     Matrix half1 = filter.matrixToOneHalf(M1, true);
     Matrix half2 = filter.matrixToOneHalf(M2, true);
     Matrix half3 = filter.matrixToOneHalf(M3, false);
     Matrix half4 = filter.matrixToOneHalf(M4, false);
+    Matrix[][] actual = {{half1, half2},
+                         {half3, half4}};
 
     for (int i = 0; i < 2; ++i) {
       for (int j = 0; j < 2; ++j) {
-        assertTrue(half1.getArray()[i][j] >= ANS_1[i][j] - DELTA &&
-                   half1.getArray()[i][j] <= ANS_1[i][j] + DELTA);
-        assertTrue(half2.getArray()[i][j] >= ANS_2[i][j] - DELTA &&
-                   half2.getArray()[i][j] <= ANS_2[i][j] + DELTA);
-        assertTrue(half3.getArray()[i][j] >= ANS_3[i][j] - DELTA &&
-                   half3.getArray()[i][j] <= ANS_3[i][j] + DELTA);
-        assertTrue(half4.getArray()[i][j] >= ANS_4[i][j] - DELTA &&
-                   half4.getArray()[i][j] <= ANS_4[i][j] + DELTA);
+        assertArrayEquals(EXPECTED[i][j], actual[i][j].getArray(), DELTA);
       }
     }
   }
 
   public void testMatrixLog() {
     final double[][] TEST = {{5, 4},
-                               {4, 5}};
+                             {4, 5}};
     final Matrix M = new Matrix(TEST);
 
-    final double[][] ANS = {{Math.log(9.0d)/2.0d, Math.log(9.0d)/2.0d},
-                            {Math.log(9.0d)/2.0d, Math.log(9.0d)/2.0d}};
+    final double[][] EXPECTED = {{Math.log(9d)/2d, Math.log(9d)/2d},
+                                 {Math.log(9d)/2d, Math.log(9d)/2d}};
 
     HDA filter = (HDA)getFilter();
     Matrix log = filter.matrixLog(M);
 
-    for (int i = 0; i < 2; ++i) {
-      for (int j = 0; j < 2; ++j) {
-        assertTrue(log.getArray()[i][j] >= ANS[i][j] - DELTA &&
-                   log.getArray()[i][j] <= ANS[i][j] + DELTA);
-      }
-    }
+    assertArrayEquals(EXPECTED, log.getArray(), DELTA);
   }
 /*
   public void testSolutionIteration() {
