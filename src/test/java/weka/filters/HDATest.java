@@ -26,7 +26,7 @@ import org.junit.Assert;
 public class HDATest
   extends AbstractFilterTest {
 
-  private static final double DELTA = 1e-15;
+  private static final double DELTA = 1e-14;
 
   public HDATest(String name) {
     super(name);
@@ -329,20 +329,16 @@ public class HDATest
 
     assertArrayEquals(EXPECTED, log.getArray(), DELTA);
   }
-/*
+
   public void testSolutionIteration() {
     final int I = 0;
     final int J = 1;
 
-    final double[][] W_SCATTER = {{1, 0},
-                                  {0, 1}};
-    final Matrix withinClassScatter = new Matrix(W_SCATTER);
-
-    final double[][] B_SCAT = {{1, 0},
-                               {0, 1}};
-    final Matrix B_SCATTER = new Matrix(B_SCAT);
-
     final double REL_PROB = 1;
+    final double PROB = 3;
+
+    final Matrix withinClassScatter = Matrix.identity(2, 2);
+    final Matrix B_SCATTER = Matrix.identity(2, 2);
 
     final double[][] C_SCAT = {{5, 4},
                                {4, 5}};
@@ -352,11 +348,10 @@ public class HDATest
                               {4, 5}};
     final Matrix COVARIANCE = new Matrix(COVAR);
 
-    final double PROB = 3;
 
-    final double[][] ANS = {{5 - Math.log(9)/2, -4 - Math.log(9)/2},
-                            {-4 - Math.log(9)/2, 5 + Math.log(9)/2}};
-    final Matrix ANSWER = new Matrix(ANS);
+    final double[][] ANS = {{5 - Math.log(9)*9/2, -4 - Math.log(9)*9/2},
+                            {-4 - Math.log(9)*9/2, 5 - Math.log(9)*9/2}};
+    final Matrix EXPECTED = new Matrix(ANS);
                             
 
     
@@ -400,19 +395,9 @@ public class HDATest
         betweenClassScatter, relativeProbabilities, combinedScatters,
         covariances, probabilities);
 
-    System.out.println(filter.matrixToOneHalf(withinClassScatter, false));
-    System.out.println(filter.matrixLog(COVARIANCE));
-    System.out.println(solution);
-    System.out.println(ANSWER);
-
-    for (int i = 0; i < 2; ++i) {
-      for (int j = 0; j < 2; ++j) {
-        assertTrue(solution.getArray()[i][j] >= ANS[i][j] - DELTA &&
-                   solution.getArray()[i][j] <= ANS[i][j] + DELTA);
-      }
-    }
+    assertArrayEquals(EXPECTED.getArray(), solution.getArray(), DELTA);
   }
-*/
+
   public static Test suite() {
     return new TestSuite(HDATest.class);
   }
