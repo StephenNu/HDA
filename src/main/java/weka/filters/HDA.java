@@ -16,7 +16,7 @@ public class HDA
   extends SimpleBatchFilter {
 
   private static final long serialVersionUID = 1L;
-  private final boolean DEBUG = true;
+  private final boolean DEBUG = false;
 
   public String globalInfo() {
     return   "A simple batch filter that adds an additional attribute "
@@ -434,11 +434,12 @@ public class HDA
       Matrix withinClassScatter = null;
       for (Integer idxi : covarianceMatrices.keySet()) {
         if (withinClassScatter == null) {
-          withinClassScatter = covarianceMatrices.get(idxi).copy();
-        }
-        withinClassScatter.plusEquals(
-                covarianceMatrices.get(idxi).times(probabilities.get(idxi))
+          withinClassScatter = covarianceMatrices.get(idxi).copy().times(probabilities.get(idxi));
+        } else {
+          withinClassScatter.plusEquals(
+                  covarianceMatrices.get(idxi).times(probabilities.get(idxi))
         );
+        }
       }
       return withinClassScatter;
     }
