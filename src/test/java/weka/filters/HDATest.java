@@ -126,14 +126,14 @@ public class HDATest
   }
 
   public void testCombineScatterMatrices() {
-    final double PROB_00 = 0.75;
+    final double PROB_00 = 0.753;
     final double PROB_01 = 3;
     final double PROB_10 = 1.75;
     final double PROB_11 = 2.33;
     final Matrix COVARIANCE_0 = new Matrix(3, 3, 0.8);
     final Matrix COVARIANCE_1 = new Matrix(3, 3, 2.73);
 
-    final double ANS_00 = 1.2;
+    final double ANS_00 = 1.2048;
     final double ANS_01 = 7.1775;
     final double ANS_10 = 7.1775;
     final double ANS_11 = 12.7218;
@@ -167,8 +167,8 @@ public class HDATest
     for (int i = 0; i < 2; ++i) {
       assertTrue(combinedScatters.containsKey(i));
     }
-    for (int i = 0; i < 2; ++i) {
-      for (int j = 0; j < 2; ++j) {
+    for (int i = 0; i < 3; ++i) {
+      for (int j = 0; j < 3; ++j) {
         assertTrue(scatter_00.getArray()[i][j] >= ANS_00 - DELTA && 
                    scatter_00.getArray()[i][j] <= ANS_00 + DELTA);
         assertTrue(scatter_01.getArray()[i][j] >= ANS_01 - DELTA && 
@@ -179,6 +179,35 @@ public class HDATest
                    scatter_11.getArray()[i][j] <= ANS_11 + DELTA);
       }
     }
+  }
+
+  public void testWithinClassScatterMatrix() {
+    final double PROB_0 = 0.753;
+    final double PROB_1 = 3;
+    final Matrix COVARIANCE_0 = new Matrix(3, 3, 0.8);
+    final Matrix COVARIANCE_1 = new Matrix(3, 3, 2.73);
+
+    final double ANS = 8.7924;
+
+    HashMap<Integer, Matrix> covariances = new HashMap<Integer, Matrix>();
+    covariances.put(0, COVARIANCE_0);
+    covariances.put(1, COVARIANCE_1);
+
+    HashMap<Integer, Double> probabilities = new HashMap<Integer, Double>();
+    probabilities.put(0, PROB_0);
+    probabilities.put(1, PROB_1);
+
+    HDA filter = (HDA)getFilter();
+    Matrix withinClassScatter 
+            = filter.withinClassScatterMatrix(covariances, probabilities);
+
+    for (int i = 0; i < 3; ++i) {
+      for (int j = 0; j < 3; ++j) {
+        assertTrue(withinClassScatter.getArray()[i][j] >= ANS - DELTA &&
+                   withinClassScatter.getArray()[i][j] <= ANS + DELTA);
+      }
+    }
+
   }
 
   public void testMatrixToOneHalf() {
