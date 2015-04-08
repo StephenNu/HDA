@@ -85,8 +85,16 @@ public class HDA
             = withinClassScatterMatrix(covarianceMatrices, probabilities);
     HashMap<Integer, HashMap<Integer, Matrix>> combinedScatters
             = combineScatterMatrices(relativeProbabilities, covarianceMatrices);
-    // Instances is just a ArrayList<Instance>
+    // Instances is just an ArrayList<Instance>
     Instances result = new Instances(determineOutputFormat(inst), 0);
+
+    dimension = inst.numAttributes() - 2;
+
+    Matrix A = solution(withinClassScatter, scatterMatrices,
+        relativeProbabilities, combinedScatters, covarianceMatrices, 
+        probabilities);
+
+    Matrix reducedData = reduceDimension(inst, A);
 
     if (DEBUG) {
       System.out.println("Instances as passed in\n" + inst);
@@ -199,13 +207,14 @@ public class HDA
         Matrix solution = solutionIteration(0, 1, withinClassScatter,
             scatterMatrices, relativeProbabilities, combinedScatters,
             covarianceMatrices, probabilities);
-
         System.out.println("SOLUTION IS THIS OKAY THANKS\n" + solution);
 
-        System.out.println("Finding final solution");
+        System.out.println("Finding A:");
         Matrix summation = solution(withinClassScatter, scatterMatrices,
             relativeProbabilities, combinedScatters, covarianceMatrices,
             probabilities);
+        System.out.println("A =\n" + summation);
+        System.out.println("Reduced data:\n" + reducedData);
 
         //Put tests above this
         System.out.println("This line is to let you know everything finished");
@@ -522,7 +531,23 @@ public class HDA
     return logA;
   }
 
+  protected Matrix reduceDimension(Instances inst, Matrix A) {
+    int num_att = inst.numAttributes();
+    int num_inst = inst.numInstances();
 
+    double[][] inst_array = new double[num_att-1][num_inst];
+
+    for (int i = 0; i < num_inst; ++i) {
+      for (int j = 0; j < num_att - 1; ++j) {
+        inst_array[j][i] = inst.instance(i).value(j);
+      }
+    }
+
+    Matrix X = new Matrix(inst_array);
+    Matrix Y = A.times(X);
+
+    return Y;
+  }
   /**
    * 
    *
@@ -575,7 +600,7 @@ public class HDA
       System.out.println("Eigenvalues Max \n" + max_eigens);
     }
 
-    return summation;
+    return max_eigens;
   }
 
   /**
