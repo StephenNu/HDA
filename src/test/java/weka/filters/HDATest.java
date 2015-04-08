@@ -180,14 +180,72 @@ public class HDATest
       }
     }
   }
-  
-/*
+
+  public void testMatrixToOneHalf() {
+    final double[][] TEST_1 = {{5, 4},
+                               {4, 5}};
+    final double[][] TEST_2 = {{1, 0},
+                               {0, 1}};
+    final Matrix M1 = new Matrix(TEST_1);
+    final Matrix M2 = new Matrix(TEST_2);
+    final Matrix M3 = new Matrix(TEST_2);
+    final Matrix M4 = new Matrix(TEST_1);
+
+    final double[][] ANS_1 = {{2, 1},
+                              {1, 2}};
+    final double[][] ANS_2 = {{1, 0},
+                              {0, 1}};
+    final double[][] ANS_3 = {{1, 0},
+                              {0, 1}};
+    final double[][] ANS_4 = {{2.0d/3, -1.0d/3},
+                              {-1.0d/3, 2.0d/3}};
+
+    HDA filter = (HDA)getFilter();
+    Matrix half1 = filter.matrixToOneHalf(M1, true);
+    Matrix half2 = filter.matrixToOneHalf(M2, true);
+    Matrix half3 = filter.matrixToOneHalf(M3, false);
+    Matrix half4 = filter.matrixToOneHalf(M4, false);
+
+    for (int i = 0; i < 2; ++i) {
+      for (int j = 0; j < 2; ++j) {
+        assertTrue(half1.getArray()[i][j] >= ANS_1[i][j] - DELTA &&
+                   half1.getArray()[i][j] <= ANS_1[i][j] + DELTA);
+        assertTrue(half2.getArray()[i][j] >= ANS_2[i][j] - DELTA &&
+                   half2.getArray()[i][j] <= ANS_2[i][j] + DELTA);
+        assertTrue(half3.getArray()[i][j] >= ANS_3[i][j] - DELTA &&
+                   half3.getArray()[i][j] <= ANS_3[i][j] + DELTA);
+        assertTrue(half4.getArray()[i][j] >= ANS_4[i][j] - DELTA &&
+                   half4.getArray()[i][j] <= ANS_4[i][j] + DELTA);
+      }
+    }
+  }
+
+  public void testMatrixLog() {
+    final double[][] TEST = {{5, 4},
+                               {4, 5}};
+    final Matrix M = new Matrix(TEST);
+
+    final double[][] ANS = {{Math.log(9.0d)/2.0d, Math.log(9.0d)/2.0d},
+                            {Math.log(9.0d)/2.0d, Math.log(9.0d)/2.0d}};
+
+    HDA filter = (HDA)getFilter();
+    Matrix log = filter.matrixLog(M);
+
+    for (int i = 0; i < 2; ++i) {
+      for (int j = 0; j < 2; ++j) {
+        assertTrue(log.getArray()[i][j] >= ANS[i][j] - DELTA &&
+                   log.getArray()[i][j] <= ANS[i][j] + DELTA);
+      }
+    }
+  }
+ /* 
   public void testSolutionIteration() {
     final int I = 0;
     final int J = 1;
 
     final double[][] W_SCATTER = {{1, 0},
                                   {0, 1}};
+    final Matrix withinClassScatter = new Matrix(W_SCATTER);
 
     final double[][] B_SCAT = {{1, 0},
                                {0, 1}};
@@ -199,18 +257,17 @@ public class HDATest
                                {4, 5}};
     final Matrix C_SCATTER = new Matrix(C_SCAT);
 
-    final Matrix COVARIANCE_0 = new Matrix(2, 2, 1);
-    final Matrix COVARIANCE_1 = new Matrix(2, 2, 1);
+    final double[][] COVAR = {{5, 4}, 
+                              {4, 5}};
+    final Matrix COVARIANCE = new Matrix(COVAR);
 
-    final double PROB_0 = 3;
-    final double PROB_1 = 3;
+    final double PROB = 3;
 
-    //Equation is now det(Sij)*inverse(Sij)+log(Sij). Deal with it.
-    final double[][] ANS = {{5 + Math.log(5), -4 + Math.log(4)},
-                            {-4 + Math.log(4), 5 + Math.log(5)}};
+    final double[][] ANS = {{5 - Math.log(9)/2, -4 - Math.log(9)/2},
+                            {-4 - Math.log(9)/2, 5 + Math.log(9)/2}};
+    final Matrix ANSWER = new Matrix(ANS);
                             
 
-    Matrix withinClassScatter = new Matrix(W_SCATTER);
     
     HashMap<Integer, HashMap<Integer, Matrix>> betweenClassScatter
         = new HashMap<Integer, HashMap<Integer, Matrix>>();
@@ -240,17 +297,22 @@ public class HDATest
     combinedScatters.get(1).put(1, C_SCATTER);
    
     HashMap<Integer, Matrix> covariances = new HashMap<Integer, Matrix>();
-    covariances.put(0, COVARIANCE_0);
-    covariances.put(1, COVARIANCE_1);
+    covariances.put(0, COVARIANCE);
+    covariances.put(1, COVARIANCE);
 
     HashMap<Integer, Double> probabilities = new HashMap<Integer, Double>();
-    probabilities.put(0, PROB_0);
-    probabilities.put(1, PROB_1);
+    probabilities.put(0, PROB);
+    probabilities.put(1, PROB);
 
     HDA filter = (HDA)getFilter();
     Matrix solution = filter.solutionIteration(I, J, withinClassScatter,
         betweenClassScatter, relativeProbabilities, combinedScatters,
         covariances, probabilities);
+
+    System.out.println(filter.matrixToOneHalf(withinClassScatter, false));
+    System.out.println(filter.matrixLog(COVARIANCE));
+    System.out.println(solution);
+    System.out.println(ANSWER);
 
     for (int i = 0; i < 2; ++i) {
       for (int j = 0; j < 2; ++j) {
