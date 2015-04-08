@@ -11,12 +11,35 @@ import weka.filters.SimpleBatchFilter;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Collections;
 
 public class HDA
   extends SimpleBatchFilter {
 
+  private class Pair implements Comparable<Pair> {
+    public double eigenvalue;
+    public double[] eigenvector;
+
+    Pair(double val, double[] vect) {
+      eigenvalue = val;
+      eigenvector = vect;
+    }
+
+    public int compareTo(Pair other) {
+      if (eigenvalue < other.eigenvalue) {
+        return 1;
+      } else if (eigenvalue > other.eigenvalue) {
+        return -1;
+      } else {
+        return 0;
+      }
+    }
+  }
+
   private static final long serialVersionUID = 1L;
-  private final boolean DEBUG = false;
+  private final boolean DEBUG = true;
+
+  private int dimension = 1;
 
   public String globalInfo() {
     return   "A simple batch filter that adds an additional attribute "
@@ -500,8 +523,15 @@ public class HDA
   }
 
 
-//FIXME - Jeremy
-//Once we know what this is supposed to do, I'll fix it
+  /**
+   * 
+   *
+   *
+   *
+   *
+   *
+   * @return
+   */
   protected Matrix solution(Matrix withinClassScatter,
       HashMap<Integer, HashMap<Integer, Matrix>> betweenClassScatters,
       HashMap<Integer, HashMap<Integer, Double>> relativeProbabilities,
@@ -510,7 +540,6 @@ public class HDA
       HashMap<Integer, Double> probabilities) {
     int rows = withinClassScatter.getRowDimension();
     int columns = withinClassScatter.getColumnDimension();
-    double[] eigenvalues = new double[rows];
     Matrix summation = new Matrix(rows, columns);
 
     for (Integer i : covariances.keySet()) {
@@ -524,16 +553,26 @@ public class HDA
     }
     EigenvalueDecomposition values = new EigenvalueDecomposition(summation);
 
-    for (int i = 0; i < rows; ++i) {
-      eigenvalues[i] = values.getD().getArray()[i][i];
+    ArrayList<Pair> eigenpairs = new ArrayList<Pair>();
+    double[][] eigenvectors = values.getV().transpose().getArray();
+    for (int i = 0; i < columns; ++i) {
+      eigenpairs.add(new Pair(values.getD().getArray()[i][i], eigenvectors[i]));
     }
+    
+    Collections.sort(eigenpairs);
+
+    double[][] solution = new double[dimension][rows];
+
+    for (int i = 0; i < dimension; ++i) {
+      solution[i] = eigenpairs.get(i).eigenvector;
+    }
+
+    Matrix max_eigens = new Matrix(solution);
 
     if (DEBUG) {
       System.out.println("Eigenvectors \n" + values.getV());
       System.out.println("Eigenvalues \n" + values.getD());
-      for (int i = 0; i < rows; ++i) {
-        System.out.println(eigenvalues[i] + " ");
-      }
+      System.out.println("Eigenvalues Max \n" + max_eigens);
     }
 
     return summation;
