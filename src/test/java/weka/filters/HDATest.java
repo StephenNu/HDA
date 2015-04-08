@@ -11,6 +11,7 @@ import weka.filters.SimpleBatchFilter;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.lang.Math;
 
 import weka.core.Instances;
 import weka.core.TestInstances;
@@ -132,10 +133,10 @@ public class HDATest
     final Matrix COVARIANCE_0 = new Matrix(3, 3, 0.8);
     final Matrix COVARIANCE_1 = new Matrix(3, 3, 2.73);
 
-    double ANS_00 = 1.2;
-    double ANS_01 = 7.1775;
-    double ANS_10 = 7.1775;
-    double ANS_11 = 12.7218;
+    final double ANS_00 = 1.2;
+    final double ANS_01 = 7.1775;
+    final double ANS_10 = 7.1775;
+    final double ANS_11 = 12.7218;
 
     HashMap<Integer, HashMap<Integer, Double>> testProbabilities
         = new HashMap<Integer, HashMap<Integer, Double>>();
@@ -178,9 +179,89 @@ public class HDATest
                    scatter_11.getArray()[i][j] <= ANS_11 + DELTA);
       }
     }
-
   }
   
+/*
+  public void testSolutionIteration() {
+    final int I = 0;
+    final int J = 1;
+
+    final double[][] W_SCATTER = {{1, 0},
+                                  {0, 1}};
+
+    final double[][] B_SCAT = {{1, 0},
+                               {0, 1}};
+    final Matrix B_SCATTER = new Matrix(B_SCAT);
+
+    final double REL_PROB = 1;
+
+    final double[][] C_SCAT = {{5, 4},
+                               {4, 5}};
+    final Matrix C_SCATTER = new Matrix(C_SCAT);
+
+    final Matrix COVARIANCE_0 = new Matrix(2, 2, 1);
+    final Matrix COVARIANCE_1 = new Matrix(2, 2, 1);
+
+    final double PROB_0 = 3;
+    final double PROB_1 = 3;
+
+    //Equation is now det(Sij)*inverse(Sij)+log(Sij). Deal with it.
+    final double[][] ANS = {{5 + Math.log(5), -4 + Math.log(4)},
+                            {-4 + Math.log(4), 5 + Math.log(5)}};
+                            
+
+    Matrix withinClassScatter = new Matrix(W_SCATTER);
+    
+    HashMap<Integer, HashMap<Integer, Matrix>> betweenClassScatter
+        = new HashMap<Integer, HashMap<Integer, Matrix>>();
+    betweenClassScatter.put(0, new HashMap<Integer, Matrix>());
+    betweenClassScatter.put(1, new HashMap<Integer, Matrix>());
+    betweenClassScatter.get(0).put(0, B_SCATTER);
+    betweenClassScatter.get(0).put(1, B_SCATTER);
+    betweenClassScatter.get(1).put(0, B_SCATTER);
+    betweenClassScatter.get(1).put(1, B_SCATTER);
+    
+    HashMap<Integer, HashMap<Integer, Double>> relativeProbabilities
+        = new HashMap<Integer, HashMap<Integer, Double>>();
+    relativeProbabilities.put(0, new HashMap<Integer, Double>());
+    relativeProbabilities.put(1, new HashMap<Integer, Double>());
+    relativeProbabilities.get(0).put(0, REL_PROB);
+    relativeProbabilities.get(0).put(1, REL_PROB);
+    relativeProbabilities.get(1).put(0, REL_PROB);
+    relativeProbabilities.get(1).put(1, REL_PROB);
+   
+    HashMap<Integer, HashMap<Integer, Matrix>> combinedScatters
+        = new HashMap<Integer, HashMap<Integer, Matrix>>();
+    combinedScatters.put(0, new HashMap<Integer, Matrix>());
+    combinedScatters.put(1, new HashMap<Integer, Matrix>());
+    combinedScatters.get(0).put(0, C_SCATTER);
+    combinedScatters.get(0).put(1, C_SCATTER);
+    combinedScatters.get(1).put(0, C_SCATTER);
+    combinedScatters.get(1).put(1, C_SCATTER);
+   
+    HashMap<Integer, Matrix> covariances = new HashMap<Integer, Matrix>();
+    covariances.put(0, COVARIANCE_0);
+    covariances.put(1, COVARIANCE_1);
+
+    HashMap<Integer, Double> probabilities = new HashMap<Integer, Double>();
+    probabilities.put(0, PROB_0);
+    probabilities.put(1, PROB_1);
+
+    HDA filter = (HDA)getFilter();
+    Matrix solution = filter.solutionIteration(I, J, withinClassScatter,
+        betweenClassScatter, relativeProbabilities, combinedScatters,
+        covariances, probabilities);
+
+    for (int i = 0; i < 2; ++i) {
+      for (int j = 0; j < 2; ++j) {
+        assertTrue(solution.getArray()[i][j] >= ANS[i][j] - DELTA &&
+                   solution.getArray()[i][j] <= ANS[i][j] + DELTA);
+      }
+    }
+
+    assertTrue(true);
+  }
+*/
   public static Test suite() {
     return new TestSuite(HDATest.class);
   }
