@@ -515,7 +515,7 @@ public class HDA
 
     for (Integer i : covariances.keySet()) {
       for (Integer j : covariances.keySet()) {
-        if (i > j) {
+        if (i < j) {
           summation = summation.plus(solutionIteration(i, j, withinClassScatter,
                 betweenClassScatters, relativeProbabilities, combinedScatters,
                 covariances, probabilities));
@@ -569,7 +569,7 @@ public class HDA
     Matrix solution = within_inverse;
     solution = solution.times(prob);
     solution = solution.times(pos_root_within);
-    
+
     Matrix within_combined = neg_root_within;
     within_combined = within_combined.times(combined_scatter);
     within_combined = within_combined.times(neg_root_within);
