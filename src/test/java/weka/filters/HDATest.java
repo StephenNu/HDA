@@ -125,6 +125,33 @@ public class HDATest
     }
   }
 
+  public void testCalculateRelativeProbability() {
+    final double PROB_0 = 2;
+    final double PROB_1 = 0.5;
+    final double PROB_2 = 1;
+
+    final double[][] ANS = {{0.5, 0.8, 2d/3},
+                            {0.2, 0.5, 1d/3},
+                            {1d/3, 2d/3, 0.5}};
+
+    HashMap<Integer, Double> probabilities = new HashMap<Integer, Double>();
+    probabilities.put(0, PROB_0);
+    probabilities.put(1, PROB_1);
+    probabilities.put(2, PROB_2);
+
+    HDA filter = (HDA)getFilter();
+    HashMap<Integer, HashMap<Integer, Double>> relativeProbabilities
+            = filter.calculateRelativeProbability(probabilities);
+
+    for (int i = 0; i < 3; ++i) {
+      for (int j = 0; j < 3; ++j) {
+        assertTrue(relativeProbabilities.get(i).get(j) >= ANS[i][j] - DELTA &&
+                   relativeProbabilities.get(i).get(j) <= ANS[i][j] + DELTA);
+      }
+    }
+    
+  }
+
   public void testCombineScatterMatrices() {
     final double PROB_00 = 0.753;
     final double PROB_01 = 3;
@@ -267,7 +294,7 @@ public class HDATest
       }
     }
   }
- /* 
+/*
   public void testSolutionIteration() {
     final int I = 0;
     final int J = 1;
@@ -349,8 +376,6 @@ public class HDATest
                    solution.getArray()[i][j] <= ANS[i][j] + DELTA);
       }
     }
-
-    assertTrue(true);
   }
 */
   public static Test suite() {
