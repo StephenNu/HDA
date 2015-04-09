@@ -88,13 +88,11 @@ public class HDA
     // Instances is just an ArrayList<Instance>
     Instances result = new Instances(determineOutputFormat(inst), 0);
 
-    dimension = inst.numAttributes() - 2;
-
     Matrix A = solution(withinClassScatter, scatterMatrices,
         relativeProbabilities, combinedScatters, covarianceMatrices, 
         probabilities);
 
-    Matrix reducedData = reduceDimension(inst, A);
+    Instances reducedData = reduceDimension(inst, A);
 
     if (DEBUG) {
       System.out.println("Instances as passed in\n" + inst);
@@ -222,7 +220,7 @@ public class HDA
         System.out.println("Debug strings were to large to be printed");
       }
     }
-    return inst;
+    return inst; // change this to reducedData once #1 is done;
   }
 
 
@@ -531,22 +529,44 @@ public class HDA
     return logA;
   }
 
-  protected Matrix reduceDimension(Instances inst, Matrix A) {
+  protected Instances reduceDimension(Instances inst, Matrix A) {
     int num_att = inst.numAttributes();
     int num_inst = inst.numInstances();
 
-    double[][] inst_array = new double[num_att-1][num_inst];
+    double[][] data_array = new double[num_att-1][num_inst];
 
     for (int i = 0; i < num_inst; ++i) {
-      for (int j = 0; j < num_att - 1; ++j) {
-        inst_array[j][i] = inst.instance(i).value(j);
+      int l = 0;
+      Instance curr_inst = inst.instance(i);
+      for (int j = 0; j < num_att; ++j) {
+        if (j != curr_inst.classIndex()) {
+          data_array[l][i] = curr_inst.value(j);
+          ++l;
+        }
       }
     }
 
-    Matrix X = new Matrix(inst_array);
+    Matrix X = new Matrix(data_array);
     Matrix Y = A.times(X);
 
-    return Y;
+    ArrayList<Attribute> attInfo = new ArrayList<Attribute>();
+    for (int i = 1; i <= dimension; ++i) {
+      attInfo.add(new Attribute("Attribute " + i));
+    }
+    attInfo.add(new Attribute("Class"));
+    // TODO: Use determine output format once issue #1 is finished remove following two lines.
+    Instances reduced_inst = new Instances("Reduced data", attInfo, num_inst);
+    reduced_inst.setClassIndex(dimension);
+
+    for (int i = 0; i < num_inst; ++i) {
+      DenseInstance new_inst = new DenseInstance(dimension+1);
+      for (int j = 0; j < dimension; ++j) {
+        new_inst.setValue(j, Y.get(j,i));
+      }
+      new_inst.setValue(dimension, inst.instance(i).classValue());
+      reduced_inst.add(new_inst);
+    }
+    return reduced_inst;
   }
   /**
    * 
