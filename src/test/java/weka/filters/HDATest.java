@@ -7,10 +7,14 @@ import weka.core.DenseInstance;
 import weka.core.Instance;
 import weka.core.Instances;
 import weka.core.matrix.*;
+import weka.core.Option;
 import weka.filters.SimpleBatchFilter;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Vector;
+import java.util.Collections;
+import java.util.Enumeration;
 import java.lang.Math;
 
 import weka.core.Instances;
@@ -94,6 +98,57 @@ public class HDATest
   // Place tests here of the form
   // public void test<test-name>() { ... test code ... }
 
+  public void testListOptions() {
+    HDA hda = (HDA)getFilter();
+    SimpleBatchFilter parent = (SimpleBatchFilter)getFilter();
+
+    Vector<Option> hda_list = new Vector<Option>();
+    Vector<Option> parent_list = new Vector<Option>();
+
+    for (Enumeration<Option> parent_ops = parent.listOptions(); parent_ops.hasMoreElements();){
+      parent_list.add(parent_ops.nextElement());
+    }
+    for (Enumeration<Option> hda_ops = hda.listOptions(); hda_ops.hasMoreElements();){
+      hda_list.add(hda_ops.nextElement());
+    }
+
+    assertEquals(parent_list.size(), hda_list.size());
+
+    for (int i = 0; i < hda_list.size(); ++i) {
+      assertEquals(hda_list.get(i).description(), parent_list.get(i).description());
+      assertEquals(hda_list.get(i).name(), parent_list.get(i).name());
+      assertEquals(hda_list.get(i).numArguments(), parent_list.get(i).numArguments());
+      assertEquals(hda_list.get(i).synopsis(), parent_list.get(i).synopsis());
+    }
+  }
+
+  public void testSetOptions() {
+    HDA filter = (HDA)getFilter();
+
+    final int ANS = 3;
+    final String[] op = {"-dim", 
+                   "3", 
+                   "-output-debug-info", 
+                   "-do-not-check-capabilities"};
+    
+    try {
+      filter.setOptions(op);
+    } catch (Exception e) {
+      fail("Exception thrown");
+    }
+    assertEquals(filter.getDimension(), ANS);
+  }
+
+  public void testGetOptions() {
+    HDA hda = (HDA)getFilter();
+    SimpleBatchFilter parent = (SimpleBatchFilter)getFilter();
+
+    String[] hda_ops = hda.getOptions();
+    String[] parent_ops = hda.getOptions();
+
+    assertEquals(parent_ops.length, hda_ops.length);
+    Assert.assertArrayEquals(parent_ops, hda_ops);
+  }
 
   public void testSeparateDatasetByClass() {
     final int NUM_CLASSES = 4;
