@@ -61,7 +61,13 @@ public class HDA
   }
 
   protected Instances determineOutputFormat(Instances inputFormat) {
-    Instances result = new Instances(inputFormat, 0);
+    ArrayList<Attribute> attinfo = new ArrayList<Attribute>();
+    for (int i = 1; i <= dimension; ++i) {
+      attinfo.add(new Attribute("Attribute " + i));
+    }
+    attinfo.add((Attribute)inputFormat.classAttribute().copy());
+    Instances result = new Instances("Reduced data", attinfo, 0);
+    result.setClassIndex(dimension);
     return result;
   }
   
@@ -103,29 +109,8 @@ public class HDA
               inst.numAttributes());
     }
 
-    /*
-     * Copies each of the old instance values to the new instance.
-     */
-    for (int i = 0; i < inst.numInstances(); i++) {
-      double[] values = new double[result.numAttributes()];
-      for (int n = 0; n < inst.numAttributes(); n++) {
-        values[n] = inst.instance(i).value(n);
-      }
-      // Copies over this instance of data to the array to construct the matrix.
-      double_matrix[i] = values;
-      // Adds the instance, which is just an array for weka.
-      result.add(new DenseInstance(1, values));
-    }
-
-    // Matrix with each row being a data point,
-    // last column is the class it belongs to.
-    Matrix matrix = new Matrix(double_matrix);
-
     if (DEBUG) {
       try {
-        System.out.println("Matrix was constructed as:");
-        System.out.println("first columns are attributes values, and "
-           + "last column is class number:\n" + matrix);
         System.out.println("We have constructed the following disjointDataset");
         for (Map.Entry<Integer, Instances> entry : disjointDataset.entrySet()) {
             System.out.println("\ndisjointDataset number "
@@ -220,7 +205,7 @@ public class HDA
         System.out.println("Debug strings were to large to be printed");
       }
     }
-    return inst; // change this to reducedData once #1 is done;
+    return reducedData;
   }
 
 
@@ -549,14 +534,7 @@ public class HDA
     Matrix X = new Matrix(data_array);
     Matrix Y = A.times(X);
 
-    ArrayList<Attribute> attInfo = new ArrayList<Attribute>();
-    for (int i = 1; i <= dimension; ++i) {
-      attInfo.add(new Attribute("Attribute " + i));
-    }
-    attInfo.add(new Attribute("Class"));
-    // TODO: Use determine output format once issue #1 is finished remove following two lines.
-    Instances reduced_inst = new Instances("Reduced data", attInfo, num_inst);
-    reduced_inst.setClassIndex(dimension);
+    Instances reduced_inst = determineOutputFormat(inst);
 
     for (int i = 0; i < num_inst; ++i) {
       DenseInstance new_inst = new DenseInstance(dimension+1);
