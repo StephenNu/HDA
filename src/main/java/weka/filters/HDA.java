@@ -7,14 +7,19 @@ import weka.core.DenseInstance;
 import weka.core.Instance;
 import weka.core.Instances;
 import weka.core.matrix.*;
+import weka.core.Option;
+import weka.core.OptionHandler;
+import weka.core.Utils;
 import weka.filters.SimpleBatchFilter;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Collections;
+import java.util.Enumeration;
+import java.util.Vector;
 
 public class HDA
-  extends SimpleBatchFilter {
+  extends SimpleBatchFilter implements OptionHandler {
 
   private class Pair implements Comparable<Pair> {
     public double eigenvalue;
@@ -37,12 +42,60 @@ public class HDA
   }
 
   private static final long serialVersionUID = 1L;
-  private final boolean DEBUG = true;
+  private final boolean DEBUG = false;
 
   private int dimension = 1;
 
+  public void setDimension(int dim) {
+    dimension = dim;
+  }
+
+  public int getDimension() {
+    return dimension;
+  }
+
+  public String dimensionTipText() {
+    return "Changes the resultant dimension of the data after HDA is applied.";
+  }
+
+  public Enumeration<Option> listOptions() {
+    Vector<Option> ops = new Vector<Option>();
+
+    for (Enumeration<Option> list_ops = super.listOptions(); list_ops.hasMoreElements();){
+      ops.add(list_ops.nextElement());
+    }
+    ops.add(new Option("Specify the new dimension (default 1)", "dim", 1, "-dim <num>"));
+
+    return ops.elements();
+  }
+
+  public void setOptions(String[] options) throws Exception {
+    super.setOptions(options);
+    String tmpStr = Utils.getOption("dim", options);
+
+    if (tmpStr.length() != 0) {
+      setDimension(Integer.parseInt(tmpStr));
+    } else {
+      setDimension(1);
+    }
+  }
+
+  public String[] getOptions() {
+    String[] list_ops = super.getOptions();
+    Vector<String> result = new Vector<String>();
+
+    for (String o : list_ops) {
+      result.add(o);
+    }
+    result.add("-dim");
+    result.add("" + getDimension());
+
+    return result.toArray(new String[result.size()]);
+  }
+
+
   public String globalInfo() {
-    return   "A simple batch filter that adds an additional attribute "
+    return   "filter that adds an additional attribute "
      +"'bla' at the end containing the index of the processed instance.";
   }
 
@@ -59,14 +112,13 @@ public class HDA
     result.enable(Capability.BINARY_CLASS);
     return result;
   }
-
+ 
   protected Instances determineOutputFormat(Instances inputFormat) {
     Instances result = new Instances(inputFormat, 0);
     return result;
   }
-  
+ 
   protected Instances process(Instances inst) {
-
     // double_matrix will be used to construct a matrix of the dataset.
     double double_matrix[][] = new double[inst.size()][inst.numAttributes()];
     // Construct all D_{i}
@@ -87,8 +139,6 @@ public class HDA
             = combineScatterMatrices(relativeProbabilities, covarianceMatrices);
     // Instances is just an ArrayList<Instance>
     Instances result = new Instances(determineOutputFormat(inst), 0);
-
-    dimension = inst.numAttributes() - 2;
 
     Matrix A = solution(withinClassScatter, scatterMatrices,
         relativeProbabilities, combinedScatters, covarianceMatrices, 
