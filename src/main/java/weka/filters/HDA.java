@@ -114,7 +114,13 @@ public class HDA
   }
  
   protected Instances determineOutputFormat(Instances inputFormat) {
-    Instances result = new Instances(inputFormat, 0);
+    ArrayList<Attribute> attinfo = new ArrayList<Attribute>();
+    for (int i = 1; i <= dimension; ++i) {
+      attinfo.add(new Attribute("Attribute " + i));
+    }
+    attinfo.add((Attribute)inputFormat.classAttribute().copy());
+    Instances result = new Instances("Reduced data", attinfo, 0);
+    result.setClassIndex(dimension);
     return result;
   }
  
@@ -144,7 +150,7 @@ public class HDA
         relativeProbabilities, combinedScatters, covarianceMatrices, 
         probabilities);
 
-    Matrix reducedData = reduceDimension(inst, A);
+    Instances reducedData = reduceDimension(inst, A);
 
     if (DEBUG) {
       System.out.println("Instances as passed in\n" + inst);
@@ -155,29 +161,8 @@ public class HDA
               inst.numAttributes());
     }
 
-    /*
-     * Copies each of the old instance values to the new instance.
-     */
-    for (int i = 0; i < inst.numInstances(); i++) {
-      double[] values = new double[result.numAttributes()];
-      for (int n = 0; n < inst.numAttributes(); n++) {
-        values[n] = inst.instance(i).value(n);
-      }
-      // Copies over this instance of data to the array to construct the matrix.
-      double_matrix[i] = values;
-      // Adds the instance, which is just an array for weka.
-      result.add(new DenseInstance(1, values));
-    }
-
-    // Matrix with each row being a data point,
-    // last column is the class it belongs to.
-    Matrix matrix = new Matrix(double_matrix);
-
     if (DEBUG) {
       try {
-        System.out.println("Matrix was constructed as:");
-        System.out.println("first columns are attributes values, and "
-           + "last column is class number:\n" + matrix);
         System.out.println("We have constructed the following disjointDataset");
         for (Map.Entry<Integer, Instances> entry : disjointDataset.entrySet()) {
             System.out.println("\ndisjointDataset number "
@@ -272,7 +257,7 @@ public class HDA
         System.out.println("Debug strings were to large to be printed");
       }
     }
-    return inst;
+    return reducedData;
   }
 
 
@@ -581,22 +566,37 @@ public class HDA
     return logA;
   }
 
-  protected Matrix reduceDimension(Instances inst, Matrix A) {
+  protected Instances reduceDimension(Instances inst, Matrix A) {
     int num_att = inst.numAttributes();
     int num_inst = inst.numInstances();
 
-    double[][] inst_array = new double[num_att-1][num_inst];
+    double[][] data_array = new double[num_att-1][num_inst];
 
     for (int i = 0; i < num_inst; ++i) {
-      for (int j = 0; j < num_att - 1; ++j) {
-        inst_array[j][i] = inst.instance(i).value(j);
+      int l = 0;
+      Instance curr_inst = inst.instance(i);
+      for (int j = 0; j < num_att; ++j) {
+        if (j != curr_inst.classIndex()) {
+          data_array[l][i] = curr_inst.value(j);
+          ++l;
+        }
       }
     }
 
-    Matrix X = new Matrix(inst_array);
+    Matrix X = new Matrix(data_array);
     Matrix Y = A.times(X);
 
-    return Y;
+    Instances reduced_inst = determineOutputFormat(inst);
+
+    for (int i = 0; i < num_inst; ++i) {
+      DenseInstance new_inst = new DenseInstance(dimension+1);
+      for (int j = 0; j < dimension; ++j) {
+        new_inst.setValue(j, Y.get(j,i));
+      }
+      new_inst.setValue(dimension, inst.instance(i).classValue());
+      reduced_inst.add(new_inst);
+    }
+    return reduced_inst;
   }
   /**
    * 
