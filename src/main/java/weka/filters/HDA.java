@@ -72,7 +72,7 @@ public class HDA
   public void setOptions(String[] options) throws Exception {
     super.setOptions(options);
     String tmpStr = Utils.getOption("dim", options);
-
+    
     if (tmpStr.length() != 0) {
       setDimension(Integer.parseInt(tmpStr));
     } else {

@@ -121,19 +121,35 @@ public class HDATest
       assertEquals(hda_list.get(i).synopsis(), parent_list.get(i).synopsis());
     }
   }
-/*
+
   public void testSetOptions() {
     HDA filter = (HDA)getFilter();
-    String[] op = new String[1];
-    op[0] = "-dim 2";
+
+    final int ANS = 3;
+    final String[] op = {"-dim", 
+                   "3", 
+                   "-output-debug-info", 
+                   "-do-not-check-capabilities"};
+    
     try {
       filter.setOptions(op);
     } catch (Exception e) {
-      fail();
+      fail("Exception thrown");
     }
-    assertEquals(filter.getDimension(), 2);
+    assertEquals(filter.getDimension(), ANS);
   }
-*/
+
+  public void testGetOptions() {
+    HDA hda = (HDA)getFilter();
+    SimpleBatchFilter parent = (SimpleBatchFilter)getFilter();
+
+    String[] hda_ops = hda.getOptions();
+    String[] parent_ops = hda.getOptions();
+
+    assertEquals(parent_ops.length, hda_ops.length);
+    Assert.assertArrayEquals(parent_ops, hda_ops);
+  }
+
   public void testSeparateDatasetByClass() {
     final int NUM_CLASSES = 4;
     final int NUM_INSTANCES = 5;
