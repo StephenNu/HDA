@@ -58,17 +58,26 @@ public class HDA
     return "Changes the resultant dimension of the data after HDA is applied.";
   }
 
+  /**
+   * @return            Returns an enumeration describing the available options.
+   */
   public Enumeration<Option> listOptions() {
     Vector<Option> ops = new Vector<Option>();
 
-    for (Enumeration<Option> list_ops = super.listOptions(); list_ops.hasMoreElements();){
+    for (Enumeration<Option> list_ops = super.listOptions(); 
+         list_ops.hasMoreElements();) {
       ops.add(list_ops.nextElement());
     }
-    ops.add(new Option("Specify the new dimension (default 1)", "dim", 1, "-dim <num>"));
+    ops.add(new Option("Specify the new dimension (default 1)", 
+                       "dim", 1, "-dim <num>"));
 
     return ops.elements();
   }
 
+  /**
+   * @param options                 The list of options to set.
+   * @throws Exception              If an option is not supported.
+   */
   public void setOptions(String[] options) throws Exception {
     super.setOptions(options);
     String tmpStr = Utils.getOption("dim", options);
@@ -80,6 +89,9 @@ public class HDA
     }
   }
 
+  /**
+   * @return          Returns the current setting of the filter.
+   */
   public String[] getOptions() {
     String[] list_ops = super.getOptions();
     Vector<String> result = new Vector<String>();
@@ -95,8 +107,11 @@ public class HDA
 
 
   public String globalInfo() {
-    return   "filter that adds an additional attribute "
-     +"'bla' at the end containing the index of the processed instance.";
+    return "Performs Heteroscedastic Discriminant Analysis and transforms the " 
+         + "data.\n"
+         + "Dimensionality reduction is done by finding the eigenvectors "
+         + "associated with the d (dimension) largest eigenvalues of a related "
+         + "matrix and multiplying each instance by them.";
   }
 
   public Capabilities getCapabilities() {
@@ -566,6 +581,13 @@ public class HDA
     return logA;
   }
 
+  /**
+   * @param inst                A list of instances, which will be added to
+   *                            a matrix and transformed.
+   * @param A                   A matrix holding the eigenvectors associated
+   *                            with the largest eigenvalues.
+   * @return                    The transformed (reduced) instances.
+   */
   protected Instances reduceDimension(Instances inst, Matrix A) {
     int num_att = inst.numAttributes();
     int num_inst = inst.numInstances();
@@ -598,14 +620,22 @@ public class HDA
     }
     return reduced_inst;
   }
+
   /**
-   * 
-   *
-   *
-   *
-   *
-   *
-   * @return
+   * @param withinClassScatter      A matrix holding the sum of all covariance
+   *                                matrices multiplied by their respective
+   *                                probabilities.
+   * @param betweenClassScatters    A list of matrices holding the scatter
+   *                                matrix for each pair of classes.
+   * @param relativeProbabilities   A list of all the relative probabilities
+   *                                for each pair of classes.
+   * @param combinedScatters        A list of combined scatter matrices for
+   *                                each pair of classes.
+   * @param covariances             The covariances matrices for each class.
+   * @param probabilities           The probabilities for each class.
+   * @return                        Returns a matrix of the eigenvectors
+   *                                associated with the d (dimension) largest
+   *                                eigenvalues.
    */
   protected Matrix solution(Matrix withinClassScatter,
       HashMap<Integer, HashMap<Integer, Matrix>> betweenClassScatters,
@@ -654,9 +684,21 @@ public class HDA
   }
 
   /**
-   * @param all_of_them       ugggh
-   * @param theres_like_eight fix later
-   * @return                  uggggh
+   * @param i                       The index of the first class used
+   * @param j                       The index of the second class used
+   * @param withinClassScatter      A matrix holding the sum of all covariance
+   *                                matrices multiplied by their respective
+   *                                probabilities.
+   * @param betweenClassScatters    A list of matrices holding the scatter
+   *                                matrix for each pair of classes.
+   * @param relativeProbabilities   A list of all the relative probabilities
+   *                                for each pair of classes.
+   * @param combinedScatters        A list of combined scatter matrices for
+   *                                each pair of classes.
+   * @param covariances             The covariances matrices for each class.
+   * @param probabilities           The probabilities for each class.
+   * @return                        A matrix holding the results of a single
+   *                                iteration of the HDA algorithm.
    */
   protected Matrix solutionIteration(int i, int j, Matrix withinClassScatter,
       HashMap<Integer, HashMap<Integer, Matrix>> betweenClassScatters,
@@ -664,7 +706,6 @@ public class HDA
       HashMap<Integer, HashMap<Integer, Matrix>> combinedScatters,
       HashMap<Integer, Matrix> covariances,
       HashMap<Integer, Double> probabilities) {
-    // Just a bunch of things to get the ball rolling
     double prob = probabilities.get(i) * probabilities.get(j);
     double rel_prob_i = relativeProbabilities.get(i).get(j);
     double rel_prob_j = relativeProbabilities.get(j).get(i);
@@ -679,32 +720,37 @@ public class HDA
     Matrix covariance_i = covariances.get(i);
     Matrix covariance_j = covariances.get(j);
 
-    // The fun bit
+    //A = Pi*Pj * Sw^(-1) * Sw^(1/2)
     Matrix solution = within_inverse;
     solution = solution.times(prob);
     solution = solution.times(pos_root_within);
 
+    //B = Sw^(-1/2) * Sij * Sw(-1/2)
     Matrix within_combined = neg_root_within;
     within_combined = within_combined.times(combined_scatter);
     within_combined = within_combined.times(neg_root_within);
 
+    //J = PIj * log(Sw^(-1/2) * Sj * Sw^(-1/2))
     Matrix log_within_j = neg_root_within;
     log_within_j = log_within_j.times(covariance_j);
     log_within_j = log_within_j.times(neg_root_within);
     log_within_j = matrixLog(log_within_j);
     log_within_j = log_within_j.times(rel_prob_j);
 
+    //I = PIi * log(Sw^(-1/2) * Si * Sw^(-1/2))
     Matrix log_within_i = neg_root_within;
     log_within_i = log_within_i.times(covariance_i);
     log_within_i = log_within_i.times(neg_root_within);
     log_within_i = matrixLog(log_within_i);
     log_within_i = log_within_i.times(rel_prob_i);
 
+    //L = 1/(PIi * PIj) * log(B) - J - I
     Matrix log_part = matrixLog(within_combined);
     log_part = log_part.minus(log_within_i);
     log_part = log_part.minus(log_within_j);
     log_part = log_part.times(rel_prob_inverse);
 
+    //F = B^(-1/2) * Sw^(-1/2) * SEij * Sw^(-1/2) * B^(-1/2) + L
     Matrix root_within_combined = matrixToOneHalf(within_combined, false);
     Matrix bracket_part = root_within_combined;
     bracket_part = bracket_part.times(neg_root_within);
@@ -713,6 +759,7 @@ public class HDA
     bracket_part = bracket_part.times(root_within_combined);
     bracket_part = bracket_part.plus(log_part);
 
+    //Solution = A * F * Sw^(1/2)
     solution = solution.times(bracket_part);
     solution = solution.times(pos_root_within);
 
