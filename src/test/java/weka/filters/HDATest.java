@@ -453,6 +453,109 @@ public class HDATest
     assertArrayEquals(EXPECTED.getArray(), solution.getArray(), DELTA);
   }
 
+  public void testSolution() {
+
+    final double REL_PROB = 1;
+    final double PROB = 3;
+
+    final Matrix withinClassScatter = Matrix.identity(2, 2);
+    final Matrix B_SCATTER = Matrix.identity(2, 2);
+
+    final double[][] C_SCAT = {{5, 4},
+                               {4, 5}};
+    final Matrix C_SCATTER = new Matrix(C_SCAT);
+
+    final double[][] COVAR = {{5, 4},
+                              {4, 5}};
+    final double[][] SPECIAL_COVAR = {{2, 8},
+                               {        1, 5}};
+    final Matrix COVARIANCE = new Matrix(COVAR);
+    final Matrix SPECIAL_COVARIANCE = new Matrix(SPECIAL_COVAR);
+
+
+    // The matrix result was,
+    // {
+    //  { 11.9945444819427074, -91.8628690246541169},
+    //  {-30.6344304013431241, -14.2462149280477064}
+    // }
+    //
+    // This resulted in the eigen values
+    // {-55.7729854800120535, 53.5213150339070722}
+    //
+    // With their associated matrix of eigen vectors in fractions and columns,
+    // {
+    //  {0.8047248011304596,  0.9112205391698998},
+    //  {0.5936480391996102, -0.4119188378733325}
+    // }
+    // The 2nd is the largest, and we are using the default of one dimension.
+    // These were found by using the expm package in R and solving the equation.
+    final double[][] ANS = {{0.9112205391698998d, -0.4119188378733325d}};
+
+    final Matrix EXPECTED = new Matrix(ANS);
+
+
+
+    HashMap<Integer, HashMap<Integer, Matrix>> betweenClassScatter
+        = new HashMap<Integer, HashMap<Integer, Matrix>>();
+    betweenClassScatter.put(0, new HashMap<Integer, Matrix>());
+    betweenClassScatter.put(1, new HashMap<Integer, Matrix>());
+    betweenClassScatter.put(2, new HashMap<Integer, Matrix>());
+    betweenClassScatter.get(0).put(0, B_SCATTER);
+    betweenClassScatter.get(0).put(1, B_SCATTER);
+    betweenClassScatter.get(0).put(2, B_SCATTER);
+    betweenClassScatter.get(1).put(0, B_SCATTER);
+    betweenClassScatter.get(1).put(1, B_SCATTER);
+    betweenClassScatter.get(1).put(2, B_SCATTER);
+    betweenClassScatter.get(2).put(0, B_SCATTER);
+    betweenClassScatter.get(2).put(1, B_SCATTER);
+    betweenClassScatter.get(2).put(2, B_SCATTER);
+
+    HashMap<Integer, HashMap<Integer, Double>> relativeProbabilities
+        = new HashMap<Integer, HashMap<Integer, Double>>();
+    relativeProbabilities.put(0, new HashMap<Integer, Double>());
+    relativeProbabilities.put(1, new HashMap<Integer, Double>());
+    relativeProbabilities.put(2, new HashMap<Integer, Double>());
+    relativeProbabilities.get(0).put(0, REL_PROB);
+    relativeProbabilities.get(0).put(1, REL_PROB);
+    relativeProbabilities.get(0).put(2, REL_PROB);
+    relativeProbabilities.get(1).put(0, REL_PROB);
+    relativeProbabilities.get(1).put(1, REL_PROB);
+    relativeProbabilities.get(1).put(2, REL_PROB);
+    relativeProbabilities.get(2).put(0, REL_PROB);
+    relativeProbabilities.get(2).put(1, REL_PROB);
+    relativeProbabilities.get(2).put(2, REL_PROB);
+
+    HashMap<Integer, HashMap<Integer, Matrix>> combinedScatters
+        = new HashMap<Integer, HashMap<Integer, Matrix>>();
+    combinedScatters.put(0, new HashMap<Integer, Matrix>());
+    combinedScatters.put(1, new HashMap<Integer, Matrix>());
+    combinedScatters.put(2, new HashMap<Integer, Matrix>());
+    combinedScatters.get(0).put(0, C_SCATTER);
+    combinedScatters.get(0).put(1, C_SCATTER);
+    combinedScatters.get(0).put(2, C_SCATTER);
+    combinedScatters.get(1).put(0, C_SCATTER);
+    combinedScatters.get(1).put(1, C_SCATTER);
+    combinedScatters.get(1).put(2, C_SCATTER);
+    combinedScatters.get(2).put(0, C_SCATTER);
+    combinedScatters.get(2).put(1, C_SCATTER);
+    combinedScatters.get(2).put(2, C_SCATTER);
+
+    HashMap<Integer, Matrix> covariances = new HashMap<Integer, Matrix>();
+    covariances.put(0, COVARIANCE);
+    covariances.put(1, COVARIANCE);
+    covariances.put(2, SPECIAL_COVARIANCE);
+
+    HashMap<Integer, Double> probabilities = new HashMap<Integer, Double>();
+    probabilities.put(0, PROB);
+    probabilities.put(1, PROB);
+    probabilities.put(2, PROB);
+
+    HDA filter = (HDA)getFilter();
+    Matrix solution = filter.solution(withinClassScatter,
+        betweenClassScatter, relativeProbabilities, combinedScatters,
+        covariances, probabilities);
+    assertArrayEquals(EXPECTED.getArray(), solution.getArray(), DELTA);
+  }
   public static Test suite() {
     return new TestSuite(HDATest.class);
   }
