@@ -39,8 +39,8 @@ public class HDATest
   protected void setUp() throws Exception {
     super.setUp();
 
-    m_Instances.deleteAttributeAt(6);  // Attribute Numeric type missing values
-    //m_Instances.deleteAttributeAt(5);// Attribute Date type missing values
+    //m_Instances.deleteAttributeAt(6);  // Attribute Numeric type missing values
+    //m_Instances.deleteAttributeAt(5);  // Attribute Date type missing values
     m_Instances.deleteAttributeAt(4);  // Attribute Nominal type missing values
     m_Instances.deleteAttributeAt(3);  // Attribute String type missing values
     //m_Instances.deleteAttributeAt(2);// Attribute Numeric Type
@@ -453,6 +453,57 @@ public class HDATest
     assertArrayEquals(EXPECTED.getArray(), solution.getArray(), DELTA);
   }
 
+  public void testReduceDimension() {
+    HDA filter = (HDA)getFilter();
+    final int NUM_CLASSES = 3;
+    final int NUM_INSTANCES = 3;
+
+    ArrayList<Attribute> attinfo = new ArrayList<Attribute>();
+    attinfo.add(new Attribute("Attribute-1"));
+    attinfo.add(new Attribute("Attribute-2"));
+    attinfo.add(new Attribute("class-ID"));
+    Instances testInst = new Instances("Test instances", attinfo, 0);
+    testInst.setClassIndex(2);
+    int id = 0;
+
+    final double[][] reduce_values =
+            {
+              {31d,1.5d}
+            };
+    final Matrix EIGENVECTOR = new Matrix(reduce_values);
+    final double[] expected_values = {63.5d, 37d, 63.5d};
+    Instances EXPECTED = new Instances(testInst, 0);
+
+    final double[][] instances_values =
+            {
+              {2d,1d,0d},
+              {1d,4d,1d},
+              {2d,1d,2d}
+            };
+    // Set up NUM_INSTANCES
+    for (int j = 0; j < NUM_INSTANCES; ++j ) {
+      Instance inst = new DenseInstance(3);
+      inst.setValue(0, instances_values[j][0]);
+      inst.setValue(1, instances_values[j][1]);
+      inst.setValue(2, instances_values[j][2]);
+      testInst.add(inst);
+
+      Instance expectedInst = new DenseInstance(2);
+      expectedInst.setValue(0, expected_values[j]);
+      expectedInst.setValue(1, j);
+      EXPECTED.add(expectedInst);
+    }
+    Instances ACTUAL = filter.reduceDimension(testInst, EIGENVECTOR);
+    if (EXPECTED.numInstances() != ACTUAL.numInstances()) {
+      fail("Reduction returned a incorrect amount of instances");
+    }
+    for (int i = 0; i < EXPECTED.numInstances(); ++i) {
+      Assert.assertArrayEquals(EXPECTED.instance(i).toDoubleArray(),
+                        ACTUAL.instance(i).toDoubleArray(),
+                        DELTA);
+    }
+  }
+
   public void testSolution() {
 
     final double REL_PROB = 1;
@@ -556,6 +607,7 @@ public class HDATest
         covariances, probabilities);
     assertArrayEquals(EXPECTED.getArray(), solution.getArray(), DELTA);
   }
+
   public static Test suite() {
     return new TestSuite(HDATest.class);
   }
