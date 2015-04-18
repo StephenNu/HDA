@@ -139,7 +139,7 @@ public class HDA
     return result;
   }
  
-  protected Instances process(Instances inst) {
+  protected Instances process(Instances inst) throws Exception {
     // double_matrix will be used to construct a matrix of the dataset.
     double double_matrix[][] = new double[inst.size()][inst.numAttributes()];
     // Construct all D_{i}
@@ -535,11 +535,19 @@ public class HDA
    * @return                    Returns the matrix A^(1/2) if positivePower is
    *                            true, and A^(-1/2) otherwise.
    */
-  protected Matrix matrixToOneHalf(Matrix A, boolean positivePower) {
+  protected Matrix matrixToOneHalf(Matrix A, boolean positivePower) 
+      throws Exception {
     EigenvalueDecomposition values = new EigenvalueDecomposition(A);
     Matrix M = values.getD();
     int M_rows = M.getRowDimension();
     int M_cols = M.getColumnDimension();
+
+    for (int i = 0; i < M_rows && i < M_cols; ++i) {
+      if (M.getArray()[i][i] < 0) {
+        throw new Exception("Eigenvalue < 0; Complex numbers are not currently handled");
+      }
+    }
+    
     for (int i = 0; i < M_rows && i < M_cols; ++i) {
       M.getArray()[i][i]
           = (positivePower) ?
@@ -562,11 +570,16 @@ public class HDA
    *
    * @return                    Returns the matrix log(A)
    */
-  protected Matrix matrixLog(Matrix A) {
+  protected Matrix matrixLog(Matrix A) throws Exception {
     EigenvalueDecomposition values = new EigenvalueDecomposition(A);
     Matrix M = values.getD();
     int M_rows = M.getRowDimension();
     int M_cols = M.getColumnDimension();
+    for (int i = 0; i < M_rows && i < M_cols; ++i) {
+      if (M.getArray()[i][i] <= 0) {
+        throw new Exception("Eigenvalue <= 0; Complex numbers are not currently handled");
+      }
+    }
     for (int i = 0; i < M_rows && i < M_cols; ++i) {
       M.getArray()[i][i] = Math.log(M.getArray()[i][i]);
     }
@@ -642,7 +655,7 @@ public class HDA
       HashMap<Integer, HashMap<Integer, Double>> relativeProbabilities,
       HashMap<Integer, HashMap<Integer, Matrix>> combinedScatters,
       HashMap<Integer, Matrix> covariances,
-      HashMap<Integer, Double> probabilities) {
+      HashMap<Integer, Double> probabilities) throws Exception {
     int rows = withinClassScatter.getRowDimension();
     int columns = withinClassScatter.getColumnDimension();
     Matrix summation = new Matrix(rows, columns);
@@ -705,7 +718,7 @@ public class HDA
       HashMap<Integer, HashMap<Integer, Double>> relativeProbabilities,
       HashMap<Integer, HashMap<Integer, Matrix>> combinedScatters,
       HashMap<Integer, Matrix> covariances,
-      HashMap<Integer, Double> probabilities) {
+      HashMap<Integer, Double> probabilities) throws Exception {
     double prob = probabilities.get(i) * probabilities.get(j);
     double rel_prob_i = relativeProbabilities.get(i).get(j);
     double rel_prob_j = relativeProbabilities.get(j).get(i);

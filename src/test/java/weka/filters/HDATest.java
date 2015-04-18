@@ -334,7 +334,7 @@ public class HDATest
 
   }
 
-  public void testMatrixToOneHalf() {
+  public void testMatrixToOneHalf() throws Exception {
     final double[][] TEST_1 = {{5, 4},
                                {4, 5}};
     final double[][] TEST_2 = {{1, 0},
@@ -371,7 +371,7 @@ public class HDATest
     }
   }
 
-  public void testMatrixLog() {
+  public void testMatrixLog() throws Exception {
     final double[][] TEST = {{5, 4},
                              {4, 5}};
     final Matrix M = new Matrix(TEST);
@@ -385,7 +385,7 @@ public class HDATest
     assertArrayEquals(EXPECTED, log.getArray(), DELTA);
   }
 
-  public void testSolutionIteration() {
+  public void testSolutionIteration() throws Exception {
     final int I = 0;
     final int J = 1;
 
@@ -504,7 +504,7 @@ public class HDATest
     }
   }
 
-  public void testSolution() {
+  public void testSolution() throws Exception {
 
     final double REL_PROB = 1;
     final double PROB = 3;
