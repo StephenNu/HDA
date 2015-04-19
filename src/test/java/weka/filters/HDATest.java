@@ -222,6 +222,52 @@ public class HDATest
       }
     }
   }
+      
+  public void testFindSampleMeans() {
+      final Matrix MEAN_0 = new Matrix(1, 2);
+      final Matrix MEAN_1 = new Matrix(4, 6);
+      final Matrix MEAN_2 = new Matrix(7, 14);
+      final Matrix[][] MEANS = {{MEAN_0},
+                                {MEAN_1},
+                                {MEAN_2}};
+      final int NUM_CLASSES = 3;
+      final int NUM_INSTANCES = 3;
+      
+      ArrayList<Attribute> attinfo = new ArrayList<Attribute>();
+      attinfo.add(new Attribute("example-ID"));
+      attinfo.add(new Attribute("class-ID"));
+      attinfo.add(new Attribute("example2-ID"));
+      Instances testInst = new Instances("Test instances", attinfo, 0);
+      testInst.setClassIndex(1);
+      int id = 0;
+      int id2 = 0;
+      
+      // Set up NUM_CLASSES with NUM_INSTANCES each with unique ID
+      for (int i = 0; i < NUM_CLASSES; ++i) {
+          for (int j = 0; j < NUM_INSTANCES; ++j ) {
+              Instance inst = new DenseInstance(3);
+              inst.setValue(0, id);
+              inst.setValue(1, i);
+              inst.setValue(2, id2);
+              ++id;
+              id+=2;
+              testInst.add(inst);
+          }
+      }
+      
+      // Process the instances.
+      HDA filter = (HDA)getFilter();
+      HashMap<Integer, Instances> disjointDataset = filter.separateDatasetByClass(testInst);
+      
+      // Now that all the setup code is finished we can test findSampleMeans.
+      HashMap<Integer, Matrix> sampleMeans = filter.findSampleMeans(disjointDataset);
+      
+      for (int i = 0; i < 3; ++i) {
+          for (int j = 0; j < 2; ++j) {
+              assertEquals(MEANS[i][j], (sampleMeans.get(i).getArray())[j]); //Not working. Issue in how I access?
+          }
+      }
+  }
 
   public void testBetweenClassScatterMatrices() {
     final Matrix MEAN_0 = new Matrix(3, 1, 1);
