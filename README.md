@@ -5,14 +5,15 @@ Heteroscedastic Discriminant Analysis (HDA) is a machine learning algorithm for 
 Ensure you have the following programs and tools installed on your computer before proceeding.
 * [Java's JDK](http://www.oracle.com/technetwork/java/javase/downloads/jdk8-downloads-2133151.html)
 * [apache-ant](http://ant.apache.org/)
-* [Weka](http://www.cs.waikato.ac.nz/ml/weka/)
-* [junit](http://junit.org/)
+* [development version of Weka](http://www.cs.waikato.ac.nz/ml/weka/) (Tested with version 3.7.12)
+* [git](http://git-scm.com/)
 
 The next step is to ensure that weka.jar is in the $CLASSPATH variable.
 On Arch Linux if weka was installed from the AUR, the jar is found in /usr/share/java/weka/weka.jar.
-To add it to the CLASSPATH on Arch add this line to your ~/.bashrc
+To add it to the CLASSPATH on Arch add this line to your ~/.bashrc and then update your systems class path we source the bashrc.
 ```
 export CLASSPATH=/usr/share/java/weka/weka.jar:$CLASSPATH
+source ~/.bashrc
 ```
 
 Next step is clone the repo,
