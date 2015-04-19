@@ -236,7 +236,7 @@ public class HDATest
       int id = 0;
       int id2 = 0;
       
-      // Set up NUM_CLASSES with NUM_INSTANCES each with unique ID
+      // Create Disjoint Data Set. 4 Instances each with a different number of Instance objects (1, 2, 3, and 4)
       for (int i = 0; i < NUM_CLASSES; ++i) {
           for (int j = 0; j < NUM_INSTANCES; ++j ) {
               Instance inst = new DenseInstance(3);
