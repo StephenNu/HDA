@@ -260,7 +260,7 @@ public class HDATest
       // Now that all the setup code is finished we can test calculateProbability.
       HashMap<Integer, Double> probabilities = filter.calculateProbability(disjointDataset);
       
-      //assertEquals(ANS[0], probabilities.get(0));
+      assertEquals(ANS[0], probabilities.get(0));
       assertEquals(ANS[1], probabilities.get(1));
       assertEquals(ANS[2], probabilities.get(2));
       assertEquals(ANS[3], probabilities.get(3));
