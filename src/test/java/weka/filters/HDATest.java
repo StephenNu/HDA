@@ -222,6 +222,44 @@ public class HDATest
       }
     }
   }
+      
+  public void testCalculateProbability() {
+      final int NUM_CLASSES = 3;
+      final int NUM_INSTANCES = 3;
+      
+      ArrayList<Attribute> attinfo = new ArrayList<Attribute>();
+      attinfo.add(new Attribute("example-ID"));
+      attinfo.add(new Attribute("class-ID"));
+      attinfo.add(new Attribute("example2-ID"));
+      Instances testInst = new Instances("Test instances", attinfo, 0);
+      testInst.setClassIndex(1);
+      int id = 0;
+      int id2 = 0;
+      
+      // Set up NUM_CLASSES with NUM_INSTANCES each with unique ID
+      for (int i = 0; i < NUM_CLASSES; ++i) {
+          for (int j = 0; j < NUM_INSTANCES; ++j ) {
+              Instance inst = new DenseInstance(3);
+              inst.setValue(0, id);
+              inst.setValue(1, i);
+              inst.setValue(2, id2);
+              ++id;
+              id+=2;
+              testInst.add(inst);
+          }
+      }
+      
+      // Process the instances.
+      HDA filter = (HDA)getFilter();
+      HashMap<Integer, Instances> disjointDataset = filter.separateDatasetByClass(testInst);
+      
+      // Now that all the setup code is finished we can test calculateProbability.
+      HashMap<Integer, Double> probabilities = filter.calculateProbability(disjointDataset);
+      
+      for (int i = 0; i < 3; ++i) {
+          assertEquals(3, probabilities.get(i));
+      }
+  }
 
   public void testBetweenClassScatterMatrices() {
     final Matrix MEAN_0 = new Matrix(3, 1, 1);
