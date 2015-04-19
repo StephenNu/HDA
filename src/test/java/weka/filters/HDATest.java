@@ -257,7 +257,7 @@ public class HDATest
       HashMap<Integer, Double> probabilities = filter.calculateProbability(disjointDataset);
       
       for (int i = 0; i < 3; ++i) {
-          assertEquals(3, probabilities.get(i));
+          assertEquals((double)1/3, probabilities.get(i)); // I thought it should be 3. hmmmmmm
       }
   }
 
