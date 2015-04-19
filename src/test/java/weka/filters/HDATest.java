@@ -224,41 +224,46 @@ public class HDATest
   }
       
   public void testCalculateProbability() {
-      final int NUM_CLASSES = 3;
-      final int NUM_INSTANCES = 3;
+      final double[] ANS = {0.1, 0.2, 0.3, 0.4};
       
+      // 3 attributes
       ArrayList<Attribute> attinfo = new ArrayList<Attribute>();
       attinfo.add(new Attribute("example-ID"));
       attinfo.add(new Attribute("class-ID"));
       attinfo.add(new Attribute("example2-ID"));
-      Instances testInst = new Instances("Test instances", attinfo, 0);
-      testInst.setClassIndex(1);
+      
+      // Process the instances.
+      HDA filter = (HDA)getFilter();
+      HashMap<Integer, Instances> disjointDataset = new HashMap<Integer, Instances>();
+      
       int id = 0;
       int id2 = 0;
       
-      // Create Disjoint Data Set. 4 Instances each with a different number of Instance objects (1, 2, 3, and 4)
-      for (int i = 0; i < NUM_CLASSES; ++i) {
-          for (int j = 0; j < NUM_INSTANCES; ++j ) {
+      // Manually create a disjoint dataset. With 4 Instances each containing a different number of instance objects.
+      // (1, 2, 3, and 4)
+      for (int i = 0; i < 4; ++i) {
+          Instances testInst = new Instances("Test instances", attinfo, 0);
+          testInst.setClassIndex(0);
+          
+          for (int j = 0; j <= i; ++j) {
               Instance inst = new DenseInstance(3);
-              inst.setValue(0, id);
-              inst.setValue(1, i);
+              inst.setValue(0, i);
+              inst.setValue(1, id);
               inst.setValue(2, id2);
               ++id;
               id+=2;
               testInst.add(inst);
           }
+          disjointDataset.put(i, testInst);
       }
-      
-      // Process the instances.
-      HDA filter = (HDA)getFilter();
-      HashMap<Integer, Instances> disjointDataset = filter.separateDatasetByClass(testInst);
       
       // Now that all the setup code is finished we can test calculateProbability.
       HashMap<Integer, Double> probabilities = filter.calculateProbability(disjointDataset);
       
-      for (int i = 0; i < 3; ++i) {
-          assertEquals((double)1/3, probabilities.get(i)); // I thought it should be 3. hmmmmmm
-      }
+      //assertEquals(ANS[0], probabilities.get(0));
+      assertEquals(ANS[1], probabilities.get(1));
+      assertEquals(ANS[2], probabilities.get(2));
+      assertEquals(ANS[3], probabilities.get(3));
   }
 
   public void testBetweenClassScatterMatrices() {
