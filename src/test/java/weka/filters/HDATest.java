@@ -259,11 +259,24 @@ public class HDATest
               testInst.add(inst);
           }
           disjointDataset.put(i, testInst);
+          System.out.println("TESTING VALUES IN INSTANCE!");
+          Instances test = disjointDataset.get(i);
+          System.out.println("Instances :" + i);
+          for (int k = 0; k < test.numInstances(); ++k)
+          {
+              Instance current_instance = test.instance(k);
+              System.out.println("Instance :" + k);
+              for (int w = 0; w < current_instance.numAttributes(); ++w)
+              {
+                    System.out.println(current_instance.value(w) + " ");
+              }
+              System.out.println();
+          }
+          System.out.println();
       }
       
       // Now that all the setup code is finished we can test findSampleMeans.
       HashMap<Integer, Matrix> sampleMeans = filter.findSampleMeans(disjointDataset);
-      
       assertArrayEquals(MEAN_0, sampleMeans.get(0).getArray(), DELTA);
       assertArrayEquals(MEAN_1, sampleMeans.get(1).getArray(), DELTA);
       assertArrayEquals(MEAN_2, sampleMeans.get(2).getArray(), DELTA);
