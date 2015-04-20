@@ -81,7 +81,37 @@ public class HDATest
       Assert.assertArrayEquals(expected[i], actual[i], delta);
     }
   }
-
+      
+  HashMap<Integer, Instances> createSeparateDataset(double[][] instance_values,
+                                                    int[] num_instances_by_class,
+                                                    int num_classes,
+                                                    int class_index) {
+      HashMap<Integer, Instances> dataset = new HashMap<Integer, Instances>();
+      ArrayList<Attribute> attinfo = new ArrayList<Attribute>();
+      for (int i = 0; i < instance_values[0].length; ++i) {
+          if (i != class_index) {
+              attinfo.add(new Attribute("example-ID-" + i));
+          } else {
+              attinfo.add(new Attribute("class-ID"));
+          }
+      }
+      int passed = 0;
+      for (int i = 0; i < num_classes; ++i) {
+          Instances testInst = new Instances("Separated dataset class " + i, attinfo, 0);
+          testInst.setClassIndex(class_index);
+          for (int k = 0; k < num_instances_by_class[i]; ++k) {
+              DenseInstance inst = new DenseInstance(instance_values[0].length);
+              for (int j = 0; j < instance_values[k + passed].length; ++j) {
+                  inst.setValue(j, instance_values[k + passed][j]);
+              }
+              testInst.add(inst);
+          }
+          passed += num_instances_by_class[i];
+          dataset.put(i, testInst);
+      }
+      return dataset;
+  }
+      
   /**
    * Gets the data after being filtered.
    *
@@ -224,46 +254,41 @@ public class HDATest
   }
       
   public void testCalculateProbability() {
-      final double[] ANS = {0.1, 0.2, 0.3, 0.4};
+      final double[] ANS = {3/18d, 3/18d, 5/18d, 2/18d, 4/18d, 1/18d};
       
-      // 3 attributes
+      // 1 attribute
       ArrayList<Attribute> attinfo = new ArrayList<Attribute>();
-      attinfo.add(new Attribute("example-ID"));
       attinfo.add(new Attribute("class-ID"));
-      attinfo.add(new Attribute("example2-ID"));
       
-      // Process the instances.
-      HDA filter = (HDA)getFilter();
-      HashMap<Integer, Instances> disjointDataset = new HashMap<Integer, Instances>();
+      final double values[][] = {
+          {0d}, {1d}, {4d},
+          {3d}, {2d}, {2d},
+          {2d}, {3d}, {1d},
+          {0d}, {0d}, {2d},
+          {2d}, {4d}, {4d},
+          {4d}, {1d}, {5d}
+      };
       
-      int id = 0;
-      int id2 = 0;
-      
-      // Manually create a disjoint dataset. With 4 Instances each containing a different number of instance objects.
-      // (1, 2, 3, and 4)
-      for (int i = 0; i < 4; ++i) {
-          Instances testInst = new Instances("Test instances", attinfo, 0);
-          testInst.setClassIndex(0);
-          
-          for (int j = 0; j <= i; ++j) {
-              Instance inst = new DenseInstance(3);
-              inst.setValue(0, i);
-              inst.setValue(1, id);
-              inst.setValue(2, id2);
-              ++id;
-              id+=2;
-              testInst.add(inst);
-          }
-          disjointDataset.put(i, testInst);
-      }
+      // Parameters defined for the manual creation of a disjointDataset
+      final int num_instances[] = {3,3,5,2,4,1};
+      final int num_classes = 6;
+      final int class_index = 0;
+      HashMap<Integer, Instances> disjointDataset = createSeparateDataset(values,
+                                                                          num_instances,
+                                                                          num_classes,
+                                                                          class_index);
+    
       
       // Now that all the setup code is finished we can test calculateProbability.
+      HDA filter = (HDA)getFilter();
       HashMap<Integer, Double> probabilities = filter.calculateProbability(disjointDataset);
       
       assertEquals(ANS[0], probabilities.get(0));
       assertEquals(ANS[1], probabilities.get(1));
       assertEquals(ANS[2], probabilities.get(2));
       assertEquals(ANS[3], probabilities.get(3));
+      assertEquals(ANS[4], probabilities.get(4));
+      assertEquals(ANS[5], probabilities.get(5));
   }
 
   public void testBetweenClassScatterMatrices() {
