@@ -81,6 +81,36 @@ public class HDATest
       Assert.assertArrayEquals(expected[i], actual[i], delta);
     }
   }
+      
+  HashMap<Integer, Instances> createSeparateDataset(double[][] instance_values,
+                                                    int[] num_instances_by_class,
+                                                    int num_classes,
+                                                    int class_index) {
+      HashMap<Integer, Instances> dataset = new HashMap<Integer, Instances>();
+      ArrayList<Attribute> attinfo = new ArrayList<Attribute>();
+      for (int i = 0; i < instance_values[0].length; ++i) {
+          if (i != class_index) {
+              attinfo.add(new Attribute("example-ID-" + i));
+          } else {
+              attinfo.add(new Attribute("class-ID"));
+          }
+      }
+      int passed = 0;
+      for (int i = 0; i < num_classes; ++i) {
+          Instances testInst = new Instances("Separated dataset class " + i, attinfo, 0);
+          testInst.setClassIndex(class_index);
+          for (int k = 0; k < num_instances_by_class[i]; ++k) {
+              DenseInstance inst = new DenseInstance(instance_values[0].length);
+              for (int j = 0; j < instance_values[k + passed].length; ++j) {
+                  inst.setValue(j, instance_values[k + passed][j]);
+              }
+              testInst.add(inst);
+          }
+          passed += num_instances_by_class[i];
+          dataset.put(i, testInst);
+      }
+      return dataset;
+  }
 
   /**
    * Gets the data after being filtered.
@@ -224,10 +254,14 @@ public class HDATest
   }
       
   public void testFindCovarianceMatrices() {
-      final double[][] COVARIANCE_0 = {{0, 0}, {0, 0}};
-      final double[][] COVARIANCE_1 = {{2.25, 0.0}, {0.0, 0.0}};
-      final double[][] COVARIANCE_2 = {{(double)(64/3), (double)(128/3)}, {(double)(128/3), (double)(256/3)}};
-      final double[][] COVARIANCE_3 = {{(double)(8100/64), (double)(4050/16)}, {(double)(4050/16), (double)(2025/4)}};
+      final double[][] COVARIANCE_0 = {{0d, 0d},
+                                       {0d, 0d}};
+      final double[][] COVARIANCE_1 = {{1/4d, 1/2d},
+                                       {1/2d, 1d}};
+      final double[][] COVARIANCE_2 = {{2/3d, 4/3d},
+                                       {4/3d, 8/3d}};
+      final double[][] COVARIANCE_3 = {{5/4d, 10/4d},
+                                      {10/4d, 20/4d}};
       
       // 3 attributes
       ArrayList<Attribute> attinfo = new ArrayList<Attribute>();
@@ -235,32 +269,31 @@ public class HDATest
       attinfo.add(new Attribute("class-ID"));
       attinfo.add(new Attribute("example2-ID"));
       
-      // Process the instances.
+      // Parameters defined for the manual creation of a disjointDataset
+      final double values[][] = {
+          {0d,12d,5d},
+          {1d,1d,2d},
+          {1d,2d,4d},
+          {2d,3d,6d},
+          {2d,4d,8d},
+          {2d,5d,10d},
+          {3d,6d,12d},
+          {3d,7d,14d},
+          {3d,8d,16d},
+          {3d,9d,18d}
+      };
+      
+      final int num_instances[] = {1,2,3,4};
+      final int num_classes = 4;
+      final int class_index = 0;
+      HashMap<Integer, Instances> disjointDataset = createSeparateDataset(values,
+                                                                          num_instances,
+                                                                          num_classes,
+                                                                          class_index);
+      
+      
+      // Now that all the setup code is finished we can test findCovarianceMatrcies.
       HDA filter = (HDA)getFilter();
-      HashMap<Integer, Instances> disjointDataset = new HashMap<Integer, Instances>();
-      
-      int id = 0;
-      int id2 = 0;
-      
-      // Manually create a disjoint dataset. With 4 Instances each containing a different number of instance objects.
-      // (1, 2, 3, and 4)
-      for (int i = 0; i < 4; ++i) {
-          Instances testInst = new Instances("Test instances", attinfo, 0);
-          testInst.setClassIndex(0);
-          
-          for (int j = 0; j <= i; ++j) {
-              Instance inst = new DenseInstance(3);
-              inst.setValue(0, i);
-              inst.setValue(1, id);
-              inst.setValue(2, id2);
-              ++id;
-              id+=2;
-              testInst.add(inst);
-          }
-          disjointDataset.put(i, testInst);
-      }
-      
-      // Now that all the setup code is finished we can test calculateProbability.
       HashMap<Integer, Matrix> covarianceMatrices = filter.findCovarianceMatrices(disjointDataset);
       
       assertArrayEquals(COVARIANCE_0, covarianceMatrices.get(0).getArray(), DELTA);
