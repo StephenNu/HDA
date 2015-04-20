@@ -111,7 +111,7 @@ public class HDATest
       }
       return dataset;
   }
-      
+  
   /**
    * Gets the data after being filtered.
    *
@@ -331,6 +331,55 @@ public class HDATest
       assertArrayEquals(MEAN_2, sampleMeans.get(2).getArray(), DELTA);
       assertArrayEquals(MEAN_3, sampleMeans.get(3).getArray(), DELTA);
   }
+
+  public void testFindCovarianceMatrices() {
+      final double[][] COVARIANCE_0 = {{0d, 0d},
+                                       {0d, 0d}};
+      final double[][] COVARIANCE_1 = {{1/4d, 1/2d},
+                                       {1/2d, 1d}};
+      final double[][] COVARIANCE_2 = {{2/3d, 4/3d},
+                                       {4/3d, 8/3d}};
+      final double[][] COVARIANCE_3 = {{5/4d, 10/4d},
+                                      {10/4d, 20/4d}};
+      
+      // 3 attributes
+      ArrayList<Attribute> attinfo = new ArrayList<Attribute>();
+      attinfo.add(new Attribute("example-ID"));
+      attinfo.add(new Attribute("class-ID"));
+      attinfo.add(new Attribute("example2-ID"));
+      
+      // Parameters defined for the manual creation of a disjointDataset
+      final double values[][] = {
+          {0d,12d,5d},
+          {1d,1d,2d},
+          {1d,2d,4d},
+          {2d,3d,6d},
+          {2d,4d,8d},
+          {2d,5d,10d},
+          {3d,6d,12d},
+          {3d,7d,14d},
+          {3d,8d,16d},
+          {3d,9d,18d}
+      };
+      
+      final int num_instances[] = {1,2,3,4};
+      final int num_classes = 4;
+      final int class_index = 0;
+      HashMap<Integer, Instances> disjointDataset = createSeparateDataset(values,
+                                                                          num_instances,
+                                                                          num_classes,
+                                                                          class_index);
+      
+      
+      // Now that all the setup code is finished we can test findCovarianceMatrcies.
+      HDA filter = (HDA)getFilter();
+      HashMap<Integer, Matrix> covarianceMatrices = filter.findCovarianceMatrices(disjointDataset);
+      
+      assertArrayEquals(COVARIANCE_0, covarianceMatrices.get(0).getArray(), DELTA);
+      assertArrayEquals(COVARIANCE_1, covarianceMatrices.get(1).getArray(), DELTA);
+      assertArrayEquals(COVARIANCE_2, covarianceMatrices.get(2).getArray(), DELTA);
+      assertArrayEquals(COVARIANCE_3, covarianceMatrices.get(3).getArray(), DELTA);
+  }    
 
   public void testBetweenClassScatterMatrices() {
     final Matrix MEAN_0 = new Matrix(3, 1, 1);
