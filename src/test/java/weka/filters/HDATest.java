@@ -111,11 +111,7 @@ public class HDATest
       }
       return dataset;
   }
-<<<<<<< HEAD
       
-=======
-
->>>>>>> testSampleMean
   /**
    * Gets the data after being filtered.
    *
@@ -257,7 +253,6 @@ public class HDATest
     }
   }
       
-<<<<<<< HEAD
   public void testCalculateProbability() {
       final double[] ANS = {3/18d, 3/18d, 5/18d, 2/18d, 4/18d, 1/18d};
       
@@ -294,7 +289,8 @@ public class HDATest
       assertEquals(ANS[3], probabilities.get(3));
       assertEquals(ANS[4], probabilities.get(4));
       assertEquals(ANS[5], probabilities.get(5));
-=======
+  }
+
   public void testFindSampleMeans() {
       final double[][] MEAN_0 = {{7.5d}, {6.5}};
       final double[][] MEAN_1 = {{11/3d}, {17.9/3d}};
@@ -334,7 +330,6 @@ public class HDATest
       assertArrayEquals(MEAN_1, sampleMeans.get(1).getArray(), DELTA);
       assertArrayEquals(MEAN_2, sampleMeans.get(2).getArray(), DELTA);
       assertArrayEquals(MEAN_3, sampleMeans.get(3).getArray(), DELTA);
->>>>>>> testSampleMean
   }
 
   public void testBetweenClassScatterMatrices() {
