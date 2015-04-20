@@ -81,6 +81,36 @@ public class HDATest
       Assert.assertArrayEquals(expected[i], actual[i], delta);
     }
   }
+      
+  HashMap<Integer, Instances> createSeparateDataset(double[][] instance_values,
+                                                    int[] num_instances_by_class,
+                                                    int num_classes,
+                                                    int class_index) {
+      HashMap<Integer, Instances> dataset = new HashMap<Integer, Instances>();
+      ArrayList<Attribute> attinfo = new ArrayList<Attribute>();
+      for (int i = 0; i < instance_values[0].length; ++i) {
+          if (i != class_index) {
+              attinfo.add(new Attribute("example-ID-" + i));
+          } else {
+              attinfo.add(new Attribute("class-ID"));
+          }
+      }
+      int passed = 0;
+      for (int i = 0; i < num_classes; ++i) {
+          Instances testInst = new Instances("Separated dataset class " + i, attinfo, 0);
+          testInst.setClassIndex(class_index);
+          for (int k = 0; k < num_instances_by_class[i]; ++k) {
+              DenseInstance inst = new DenseInstance(instance_values[0].length);
+              for (int j = 0; j < instance_values[k + passed].length; ++j) {
+                  inst.setValue(j, instance_values[k + passed][j]);
+              }
+              testInst.add(inst);
+          }
+          passed += num_instances_by_class[i];
+          dataset.put(i, testInst);
+      }
+      return dataset;
+  }
 
   /**
    * Gets the data after being filtered.
@@ -543,36 +573,6 @@ public class HDATest
                         ACTUAL.instance(i).toDoubleArray(),
                         DELTA);
     }
-  }
-      
-  HashMap<Integer, Instances> createSeparateDataset(double[][] instance_values,
-                                                    int[] num_instances_by_class,
-                                                    int num_classes,
-                                                    int class_index) {
-      HashMap<Integer, Instances> dataset = new HashMap<Integer, Instances>();
-      ArrayList<Attribute> attinfo = new ArrayList<Attribute>();
-      for (int i = 0; i < instance_values[0].length; ++i) {
-          if (i != class_index) {
-              attinfo.add(new Attribute("example-ID-" + i));
-          } else {
-              attinfo.add(new Attribute("class-ID"));
-          }
-      }
-      int passed = 0;
-      for (int i = 0; i < num_classes; ++i) {
-          Instances testInst = new Instances("Separated dataset class " + i, attinfo, 0);
-          testInst.setClassIndex(class_index);
-          for (int k = 0; k < num_instances_by_class[i]; ++k) {
-              DenseInstance inst = new DenseInstance(instance_values[0].length);
-              for (int j = 0; j < instance_values[k + passed].length; ++j) {
-                  inst.setValue(j, instance_values[k + passed][j]);
-              }
-              testInst.add(inst);
-          }
-          passed += num_instances_by_class[i];
-          dataset.put(i, testInst);
-      }
-      return dataset;
   }
 
   public void testSolution() throws Exception {
