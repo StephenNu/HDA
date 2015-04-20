@@ -224,58 +224,39 @@ public class HDATest
   }
       
   public void testFindSampleMeans() {
-      final double[][] MEAN_0 = {{0.0}, {0.0}};
-      final double[][] MEAN_1 = {{(double)3/2}, {(double)6/2}};
-      final double[][] MEAN_2 = {{(double)12/3}, {(double)24/3}};
-      final double[][] MEAN_3 = {{(double)30/4}, {(double)60/4}};
+      final double[][] MEAN_0 = {{7.5d}, {6.5}};
+      final double[][] MEAN_1 = {{11/3d}, {17.9/3d}};
+      final double[][] MEAN_2 = {{3.5/2d}, {13.2/2d}};
+      final double[][] MEAN_3 = {{11.5d}, {7.4d}};
       
-      final Matrix M0 = new Matrix(MEAN_0);
       // 3 attributes
       ArrayList<Attribute> attinfo = new ArrayList<Attribute>();
       attinfo.add(new Attribute("example-ID"));
       attinfo.add(new Attribute("class-ID"));
       attinfo.add(new Attribute("example2-ID"));
       
-      // Process the instances.
-      HDA filter = (HDA)getFilter();
-      HashMap<Integer, Instances> disjointDataset = new HashMap<Integer, Instances>();
+      final double values[][] = {
+          {8d,12d,0d},
+          {7d,1d,0d},
+          {3d,8.5d,1d},
+          {1d,3d,1d},
+          {7d,6.4d,1d},
+          {2d,10.2d,2d},
+          {1.5d,3d,2d},
+          {11.5d,7.4d,3d}
+      };
       
-      int id = 0;
-      int id2 = 0;
-      
-      // Manually create a disjoint dataset. With 4 Instances each containing a different number of instance objects.
-      // (1, 2, 3, and 4)
-      for (int i = 0; i < 4; ++i) {
-          Instances testInst = new Instances("Test instances", attinfo, 0);
-          testInst.setClassIndex(0);
-          
-          for (int j = 0; j <= i; ++j) {
-              Instance inst = new DenseInstance(3);
-              inst.setValue(0, i);
-              inst.setValue(1, id);
-              inst.setValue(2, id2);
-              ++id;
-              id+=2;
-              testInst.add(inst);
-          }
-          disjointDataset.put(i, testInst);
-          System.out.println("TESTING VALUES IN INSTANCE!");
-          Instances test = disjointDataset.get(i);
-          System.out.println("Instances :" + i);
-          for (int k = 0; k < test.numInstances(); ++k)
-          {
-              Instance current_instance = test.instance(k);
-              System.out.println("Instance :" + k);
-              for (int w = 0; w < current_instance.numAttributes(); ++w)
-              {
-                    System.out.println(current_instance.value(w) + " ");
-              }
-              System.out.println();
-          }
-          System.out.println();
-      }
+      // Parameters defined for the manual creation of a disjointDataset
+      final int num_instances[] = {2,3,2,1};
+      final int num_classes = 4;
+      final int class_index = 2;
+      HashMap<Integer, Instances> disjointDataset = createSeparateDataset(values,
+                                                                  num_instances,
+                                                                  num_classes,
+                                                                  class_index);
       
       // Now that all the setup code is finished we can test findSampleMeans.
+      HDA filter = (HDA)getFilter();
       HashMap<Integer, Matrix> sampleMeans = filter.findSampleMeans(disjointDataset);
       assertArrayEquals(MEAN_0, sampleMeans.get(0).getArray(), DELTA);
       assertArrayEquals(MEAN_1, sampleMeans.get(1).getArray(), DELTA);
@@ -562,6 +543,36 @@ public class HDATest
                         ACTUAL.instance(i).toDoubleArray(),
                         DELTA);
     }
+  }
+      
+  HashMap<Integer, Instances> createSeparateDataset(double[][] instance_values,
+                                                    int[] num_instances_by_class,
+                                                    int num_classes,
+                                                    int class_index) {
+      HashMap<Integer, Instances> dataset = new HashMap<Integer, Instances>();
+      ArrayList<Attribute> attinfo = new ArrayList<Attribute>();
+      for (int i = 0; i < instance_values[0].length; ++i) {
+          if (i != class_index) {
+              attinfo.add(new Attribute("example-ID-" + i));
+          } else {
+              attinfo.add(new Attribute("class-ID"));
+          }
+      }
+      int passed = 0;
+      for (int i = 0; i < num_classes; ++i) {
+          Instances testInst = new Instances("Separated dataset class " + i, attinfo, 0);
+          testInst.setClassIndex(class_index);
+          for (int k = 0; k < num_instances_by_class[i]; ++k) {
+              DenseInstance inst = new DenseInstance(instance_values[0].length);
+              for (int j = 0; j < instance_values[k + passed].length; ++j) {
+                  inst.setValue(j, instance_values[k + passed][j]);
+              }
+              testInst.add(inst);
+          }
+          passed += num_instances_by_class[i];
+          dataset.put(i, testInst);
+      }
+      return dataset;
   }
 
   public void testSolution() throws Exception {
