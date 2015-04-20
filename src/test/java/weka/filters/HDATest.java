@@ -224,11 +224,12 @@ public class HDATest
   }
       
   public void testFindSampleMeans() {
-      final Matrix MEAN_0 = new Matrix(0, 0);
-      final Matrix MEAN_1 = new Matrix(3/2, 6/2);
-      final Matrix MEAN_2 = new Matrix(12/3, 24/3);
-      final Matrix MEAN_3 = new Matrix(30/4, 60/4);
+      final double[][] MEAN_0 = {{0.0}, {0.0}};
+      final double[][] MEAN_1 = {{(double)3/2}, {(double)6/2}};
+      final double[][] MEAN_2 = {{(double)12/3}, {(double)24/3}};
+      final double[][] MEAN_3 = {{(double)30/4}, {(double)60/4}};
       
+      final Matrix M0 = new Matrix(MEAN_0);
       // 3 attributes
       ArrayList<Attribute> attinfo = new ArrayList<Attribute>();
       attinfo.add(new Attribute("example-ID"));
@@ -263,10 +264,10 @@ public class HDATest
       // Now that all the setup code is finished we can test findSampleMeans.
       HashMap<Integer, Matrix> sampleMeans = filter.findSampleMeans(disjointDataset);
       
-      assertArrayEquals(MEAN_0.getArray(), sampleMeans.get(0).getArray(), DELTA);
-      assertArrayEquals(MEAN_1.getArray(), sampleMeans.get(1).getArray(), DELTA);
-      assertArrayEquals(MEAN_2.getArray(), sampleMeans.get(2).getArray(), DELTA);
-      assertArrayEquals(MEAN_3.getArray(), sampleMeans.get(3).getArray(), DELTA);
+      assertArrayEquals(MEAN_0, sampleMeans.get(0).getArray(), DELTA);
+      assertArrayEquals(MEAN_1, sampleMeans.get(1).getArray(), DELTA);
+      assertArrayEquals(MEAN_2, sampleMeans.get(2).getArray(), DELTA);
+      assertArrayEquals(MEAN_3, sampleMeans.get(3).getArray(), DELTA);
   }
 
   public void testBetweenClassScatterMatrices() {
