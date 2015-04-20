@@ -111,7 +111,11 @@ public class HDATest
       }
       return dataset;
   }
+<<<<<<< HEAD
       
+=======
+
+>>>>>>> testSampleMean
   /**
    * Gets the data after being filtered.
    *
@@ -253,6 +257,7 @@ public class HDATest
     }
   }
       
+<<<<<<< HEAD
   public void testCalculateProbability() {
       final double[] ANS = {3/18d, 3/18d, 5/18d, 2/18d, 4/18d, 1/18d};
       
@@ -289,6 +294,47 @@ public class HDATest
       assertEquals(ANS[3], probabilities.get(3));
       assertEquals(ANS[4], probabilities.get(4));
       assertEquals(ANS[5], probabilities.get(5));
+=======
+  public void testFindSampleMeans() {
+      final double[][] MEAN_0 = {{7.5d}, {6.5}};
+      final double[][] MEAN_1 = {{11/3d}, {17.9/3d}};
+      final double[][] MEAN_2 = {{3.5/2d}, {13.2/2d}};
+      final double[][] MEAN_3 = {{11.5d}, {7.4d}};
+      
+      // 3 attributes
+      ArrayList<Attribute> attinfo = new ArrayList<Attribute>();
+      attinfo.add(new Attribute("example-ID"));
+      attinfo.add(new Attribute("class-ID"));
+      attinfo.add(new Attribute("example2-ID"));
+      
+      final double values[][] = {
+          {8d,12d,0d},
+          {7d,1d,0d},
+          {3d,8.5d,1d},
+          {1d,3d,1d},
+          {7d,6.4d,1d},
+          {2d,10.2d,2d},
+          {1.5d,3d,2d},
+          {11.5d,7.4d,3d}
+      };
+      
+      // Parameters defined for the manual creation of a disjointDataset
+      final int num_instances[] = {2,3,2,1};
+      final int num_classes = 4;
+      final int class_index = 2;
+      HashMap<Integer, Instances> disjointDataset = createSeparateDataset(values,
+                                                                  num_instances,
+                                                                  num_classes,
+                                                                  class_index);
+      
+      // Now that all the setup code is finished we can test findSampleMeans.
+      HDA filter = (HDA)getFilter();
+      HashMap<Integer, Matrix> sampleMeans = filter.findSampleMeans(disjointDataset);
+      assertArrayEquals(MEAN_0, sampleMeans.get(0).getArray(), DELTA);
+      assertArrayEquals(MEAN_1, sampleMeans.get(1).getArray(), DELTA);
+      assertArrayEquals(MEAN_2, sampleMeans.get(2).getArray(), DELTA);
+      assertArrayEquals(MEAN_3, sampleMeans.get(3).getArray(), DELTA);
+>>>>>>> testSampleMean
   }
 
   public void testBetweenClassScatterMatrices() {
