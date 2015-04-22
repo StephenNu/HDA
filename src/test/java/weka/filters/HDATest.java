@@ -81,7 +81,37 @@ public class HDATest
       Assert.assertArrayEquals(expected[i], actual[i], delta);
     }
   }
-
+      
+  HashMap<Integer, Instances> createSeparateDataset(double[][] instance_values,
+                                                    int[] num_instances_by_class,
+                                                    int num_classes,
+                                                    int class_index) {
+      HashMap<Integer, Instances> dataset = new HashMap<Integer, Instances>();
+      ArrayList<Attribute> attinfo = new ArrayList<Attribute>();
+      for (int i = 0; i < instance_values[0].length; ++i) {
+          if (i != class_index) {
+              attinfo.add(new Attribute("example-ID-" + i));
+          } else {
+              attinfo.add(new Attribute("class-ID"));
+          }
+      }
+      int passed = 0;
+      for (int i = 0; i < num_classes; ++i) {
+          Instances testInst = new Instances("Separated dataset class " + i, attinfo, 0);
+          testInst.setClassIndex(class_index);
+          for (int k = 0; k < num_instances_by_class[i]; ++k) {
+              DenseInstance inst = new DenseInstance(instance_values[0].length);
+              for (int j = 0; j < instance_values[k + passed].length; ++j) {
+                  inst.setValue(j, instance_values[k + passed][j]);
+              }
+              testInst.add(inst);
+          }
+          passed += num_instances_by_class[i];
+          dataset.put(i, testInst);
+      }
+      return dataset;
+  }
+  
   /**
    * Gets the data after being filtered.
    *
@@ -222,6 +252,134 @@ public class HDATest
       }
     }
   }
+      
+  public void testCalculateProbability() {
+      final double[] ANS = {3/18d, 3/18d, 5/18d, 2/18d, 4/18d, 1/18d};
+      
+      // 1 attribute
+      ArrayList<Attribute> attinfo = new ArrayList<Attribute>();
+      attinfo.add(new Attribute("class-ID"));
+      
+      final double values[][] = {
+          {0d}, {1d}, {4d},
+          {3d}, {2d}, {2d},
+          {2d}, {3d}, {1d},
+          {0d}, {0d}, {2d},
+          {2d}, {4d}, {4d},
+          {4d}, {1d}, {5d}
+      };
+      
+      // Parameters defined for the manual creation of a disjointDataset
+      final int num_instances[] = {3,3,5,2,4,1};
+      final int num_classes = 6;
+      final int class_index = 0;
+      HashMap<Integer, Instances> disjointDataset = createSeparateDataset(values,
+                                                                          num_instances,
+                                                                          num_classes,
+                                                                          class_index);
+    
+      
+      // Now that all the setup code is finished we can test calculateProbability.
+      HDA filter = (HDA)getFilter();
+      HashMap<Integer, Double> probabilities = filter.calculateProbability(disjointDataset);
+      
+      assertEquals(ANS[0], probabilities.get(0));
+      assertEquals(ANS[1], probabilities.get(1));
+      assertEquals(ANS[2], probabilities.get(2));
+      assertEquals(ANS[3], probabilities.get(3));
+      assertEquals(ANS[4], probabilities.get(4));
+      assertEquals(ANS[5], probabilities.get(5));
+  }
+
+  public void testFindSampleMeans() {
+      final double[][] MEAN_0 = {{7.5d}, {6.5}};
+      final double[][] MEAN_1 = {{11/3d}, {17.9/3d}};
+      final double[][] MEAN_2 = {{3.5/2d}, {13.2/2d}};
+      final double[][] MEAN_3 = {{11.5d}, {7.4d}};
+      
+      // 3 attributes
+      ArrayList<Attribute> attinfo = new ArrayList<Attribute>();
+      attinfo.add(new Attribute("example-ID"));
+      attinfo.add(new Attribute("class-ID"));
+      attinfo.add(new Attribute("example2-ID"));
+      
+      final double values[][] = {
+          {8d,12d,0d},
+          {7d,1d,0d},
+          {3d,8.5d,1d},
+          {1d,3d,1d},
+          {7d,6.4d,1d},
+          {2d,10.2d,2d},
+          {1.5d,3d,2d},
+          {11.5d,7.4d,3d}
+      };
+      
+      // Parameters defined for the manual creation of a disjointDataset
+      final int num_instances[] = {2,3,2,1};
+      final int num_classes = 4;
+      final int class_index = 2;
+      HashMap<Integer, Instances> disjointDataset = createSeparateDataset(values,
+                                                                  num_instances,
+                                                                  num_classes,
+                                                                  class_index);
+      
+      // Now that all the setup code is finished we can test findSampleMeans.
+      HDA filter = (HDA)getFilter();
+      HashMap<Integer, Matrix> sampleMeans = filter.findSampleMeans(disjointDataset);
+      assertArrayEquals(MEAN_0, sampleMeans.get(0).getArray(), DELTA);
+      assertArrayEquals(MEAN_1, sampleMeans.get(1).getArray(), DELTA);
+      assertArrayEquals(MEAN_2, sampleMeans.get(2).getArray(), DELTA);
+      assertArrayEquals(MEAN_3, sampleMeans.get(3).getArray(), DELTA);
+  }
+
+  public void testFindCovarianceMatrices() {
+      final double[][] COVARIANCE_0 = {{0d, 0d},
+                                       {0d, 0d}};
+      final double[][] COVARIANCE_1 = {{1/4d, 1/2d},
+                                       {1/2d, 1d}};
+      final double[][] COVARIANCE_2 = {{2/3d, 4/3d},
+                                       {4/3d, 8/3d}};
+      final double[][] COVARIANCE_3 = {{5/4d, 10/4d},
+                                      {10/4d, 20/4d}};
+      
+      // 3 attributes
+      ArrayList<Attribute> attinfo = new ArrayList<Attribute>();
+      attinfo.add(new Attribute("example-ID"));
+      attinfo.add(new Attribute("class-ID"));
+      attinfo.add(new Attribute("example2-ID"));
+      
+      // Parameters defined for the manual creation of a disjointDataset
+      final double values[][] = {
+          {0d,12d,5d},
+          {1d,1d,2d},
+          {1d,2d,4d},
+          {2d,3d,6d},
+          {2d,4d,8d},
+          {2d,5d,10d},
+          {3d,6d,12d},
+          {3d,7d,14d},
+          {3d,8d,16d},
+          {3d,9d,18d}
+      };
+      
+      final int num_instances[] = {1,2,3,4};
+      final int num_classes = 4;
+      final int class_index = 0;
+      HashMap<Integer, Instances> disjointDataset = createSeparateDataset(values,
+                                                                          num_instances,
+                                                                          num_classes,
+                                                                          class_index);
+      
+      
+      // Now that all the setup code is finished we can test findCovarianceMatrcies.
+      HDA filter = (HDA)getFilter();
+      HashMap<Integer, Matrix> covarianceMatrices = filter.findCovarianceMatrices(disjointDataset);
+      
+      assertArrayEquals(COVARIANCE_0, covarianceMatrices.get(0).getArray(), DELTA);
+      assertArrayEquals(COVARIANCE_1, covarianceMatrices.get(1).getArray(), DELTA);
+      assertArrayEquals(COVARIANCE_2, covarianceMatrices.get(2).getArray(), DELTA);
+      assertArrayEquals(COVARIANCE_3, covarianceMatrices.get(3).getArray(), DELTA);
+  }    
 
   public void testBetweenClassScatterMatrices() {
     final Matrix MEAN_0 = new Matrix(3, 1, 1);
