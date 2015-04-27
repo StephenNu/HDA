@@ -67,7 +67,7 @@ public class HDA
     return "Changes the resultant dimension of the data after HDA is applied.";
   }
 
-  public String thesholdTipText() {
+  public String thresholdTipText() {
     return "Changes the lower limit for eigenvalues.";
   }
 
@@ -172,8 +172,7 @@ public class HDA
                           "than number of attributes");
     }
     if (threshold <= 0) {
-      throw new Exception("Eigenvalues must be >= 0 as complex " +
-                          "numbers are not currently supported");
+      throw new Exception("Threshold must be > 0");
     }
     // double_matrix will be used to construct a matrix of the dataset.
     double double_matrix[][] = new double[inst.size()][inst.numAttributes()];
