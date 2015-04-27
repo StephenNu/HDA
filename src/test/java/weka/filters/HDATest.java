@@ -156,8 +156,11 @@ public class HDATest
     HDA filter = (HDA)getFilter();
 
     final int ANS = 3;
+    final double THRESH = 1e-9;
     final String[] op = {"-dim", 
                    "3", 
+                   "-thresh",
+                   "1.0E-9",
                    "-output-debug-info", 
                    "-do-not-check-capabilities"};
     
@@ -167,6 +170,7 @@ public class HDATest
       fail("Exception thrown");
     }
     assertEquals(filter.getDimension(), ANS);
+    assertEquals(filter.getThreshold(), THRESH);
   }
 
   public void testGetOptions() {

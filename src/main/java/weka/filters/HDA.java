@@ -67,7 +67,7 @@ public class HDA
     return "Changes the resultant dimension of the data after HDA is applied.";
   }
 
-  public String thesholdTipText() {
+  public String thresholdTipText() {
     return "Changes the lower limit for eigenvalues.";
   }
 
