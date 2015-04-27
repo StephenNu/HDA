@@ -171,6 +171,10 @@ public class HDA
       throw new Exception("Cannot reduce to a dimension greater " +
                           "than number of attributes");
     }
+    if (threshold <= 0) {
+      throw new Exception("Eigenvalues must be >= 0 as complex " +
+                          "numbers are not currently supported");
+    }
     // double_matrix will be used to construct a matrix of the dataset.
     double double_matrix[][] = new double[inst.size()][inst.numAttributes()];
     // Construct all D_{i}
