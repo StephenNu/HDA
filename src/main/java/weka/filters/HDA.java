@@ -45,17 +45,30 @@ public class HDA
   private final boolean DEBUG = false;
 
   private int dimension = 1;
+  private double threshold = 1e-8;
 
   public void setDimension(int dim) {
     dimension = dim;
+  }
+
+  public void setThreshold(double thresh) {
+    threshold = thresh;
   }
 
   public int getDimension() {
     return dimension;
   }
 
+  public double getThreshold() {
+    return threshold;
+  }
+
   public String dimensionTipText() {
     return "Changes the resultant dimension of the data after HDA is applied.";
+  }
+
+  public String thesholdTipText() {
+    return "Changes the lower limit for eigenvalues.";
   }
 
   /**
@@ -70,6 +83,8 @@ public class HDA
     }
     ops.add(new Option("Specify the new dimension (default 1)", 
                        "dim", 1, "-dim <num>"));
+    ops.add(new Option("Specify the new threshold (default 1e-8)",
+                       "thresh", 1, "-thresh <num>"));
 
     return ops.elements();
   }
@@ -87,6 +102,14 @@ public class HDA
     } else {
       setDimension(1);
     }
+
+    tmpStr = Utils.getOption("thresh", options);
+
+    if (tmpStr.length() != 0) {
+      setThreshold(Double.parseDouble(tmpStr));
+    } else {
+      setThreshold(1e-8);
+    }
   }
 
   /**
@@ -101,6 +124,8 @@ public class HDA
     }
     result.add("-dim");
     result.add("" + getDimension());
+    result.add("-thresh");
+    result.add("" + getThreshold());
 
     return result.toArray(new String[result.size()]);
   }
@@ -140,6 +165,16 @@ public class HDA
   }
  
   protected Instances process(Instances inst) throws Exception {
+    if (dimension < 0) {
+      throw new Exception("Cannot reduce dimension below 0");
+    } else if (dimension >= inst.numAttributes()) {
+      throw new Exception("Cannot reduce to a dimension greater " +
+                          "than number of attributes");
+    }
+    if (threshold <= 0) {
+      throw new Exception("Eigenvalues must be >= 0 as complex " +
+                          "numbers are not currently supported");
+    }
     // double_matrix will be used to construct a matrix of the dataset.
     double double_matrix[][] = new double[inst.size()][inst.numAttributes()];
     // Construct all D_{i}
@@ -543,8 +578,8 @@ public class HDA
     int M_cols = M.getColumnDimension();
 
     for (int i = 0; i < M_rows && i < M_cols; ++i) {
-      if (M.getArray()[i][i] < 0) {
-        throw new Exception("Eigenvalue < 0; Complex numbers are not currently handled");
+      if (M.getArray()[i][i] < threshold) {
+        M.getArray()[i][i] = threshold;
       }
     }
     
@@ -576,8 +611,8 @@ public class HDA
     int M_rows = M.getRowDimension();
     int M_cols = M.getColumnDimension();
     for (int i = 0; i < M_rows && i < M_cols; ++i) {
-      if (M.getArray()[i][i] <= 0) {
-        throw new Exception("Eigenvalue <= 0; Complex numbers are not currently handled");
+      if (M.getArray()[i][i] < threshold) {
+        M.getArray()[i][i] = threshold;
       }
     }
     for (int i = 0; i < M_rows && i < M_cols; ++i) {
