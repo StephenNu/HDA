@@ -140,6 +140,12 @@ public class HDA
   }
  
   protected Instances process(Instances inst) throws Exception {
+    if (dimension < 0) {
+      throw new Exception("Cannot reduce dimension below 0");
+    } else if (dimension >= inst.numAttributes()) {
+      throw new Exception("Cannot reduce to a dimension greater " +
+                          "than number of attributes");
+    }
     // double_matrix will be used to construct a matrix of the dataset.
     double double_matrix[][] = new double[inst.size()][inst.numAttributes()];
     // Construct all D_{i}
